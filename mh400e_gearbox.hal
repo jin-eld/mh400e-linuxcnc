@@ -1,0 +1,23 @@
+loadrt mh400e_gearbox
+loadusr -Wn mh400e_gearbox_sim pyvcp -c mh400e_gearbox_sim mh400e_gearbox.xml
+net get-spindle-speed mh400e-gearbox.spindle-speed-out => mh400e_gearbox_sim.spindle-speed-out
+net set-spindle-speed mh400e-gearbox.spindle-speed-in-abs <= mh400e_gearbox_sim.spindle−speed−in−abs-f
+net set-reducer-left mh400e-gearbox.reducer-left => mh400e_gearbox_sim.reducer-left
+net set-reducer-right mh400e-gearbox.reducer-right => mh400e_gearbox_sim.reducer-right
+net set-reducer-center mh400e-gearbox.reducer-center => mh400e_gearbox_sim.reducer-center
+net set-reducer-left-center mh400e-gearbox.reducer-left-center => mh400e_gearbox_sim.reducer-left-center
+net set-middle-left mh400e-gearbox.middle-left => mh400e_gearbox_sim.middle-left
+net set-middle-right mh400e-gearbox.middle-right => mh400e_gearbox_sim.middle-right
+net set-middle-center mh400e-gearbox.middle-center => mh400e_gearbox_sim.middle-center
+net set-left-center mh400e-gearbox.middle-left-center => mh400e_gearbox_sim.middle-left-center
+net set-input-left mh400e-gearbox.input-left => mh400e_gearbox_sim.input-left
+net set-input-right mh400e-gearbox.input-right => mh400e_gearbox_sim.input-right
+net set-input-center mh400e-gearbox.input-center => mh400e_gearbox_sim.input-center
+net set-input-left-center mh400e-gearbox.input-left-center => mh400e_gearbox_sim.input-left-center
+# remove 2 zeroes later
+loadrt threads name1=mh400e-sim-thread period1=100000000
+addf mh400e-gearbox mh400e-sim-thread
+start
+waitusr mh400e_gearbox_sim
+stop
+unload mh400e_gearbox

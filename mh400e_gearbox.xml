@@ -1,0 +1,209 @@
+<pyvcp>
+  <label text="MH400E gearbox control simulation"/>
+  <hbox>
+    <labelframe text="Gearbox Simulation">
+      <vbox>
+        <relief>FLAT</relief>
+        <bd>10</bd>
+        <labelframe text="Speed Settings">
+          <vbox>
+            <relief>FLAT</relief>
+            <bd>5</bd>
+            <vbox>
+              <relief>RIDGE</relief>
+              <bd>3</bd>
+              <label>
+                <text>"Initial gearbox speed"</text>
+              </label>
+              <scale>
+                <halpin>"simulated-speed-request-in"</halpin>
+                <resolution>10</resolution>
+                <orient>HORIZONTAL</orient>
+                <initval>0</initval>
+                <min_>0</min_>
+                <max_>4000</max_>
+                <param_pin>1</param_pin>
+              </scale>
+            </vbox>
+            <vbox>
+              <relief>RIDGE</relief>
+              <bd>3</bd>
+              <label>
+               <text>"Supported speed"</text>
+              </label>
+              <bar>
+                <halpin>"current-gearbox-speed-out"</halpin>
+                <max_>4000</max_>
+              </bar>
+            </vbox>
+          </vbox>
+        </labelframe>
+        <labelframe text="Gearbox Status Pins">
+          <vbox>
+            <relief>FLAT</relief>
+            <bd>5</bd>
+            <labelframe text="Backgear">
+              <vbox>
+                <hbox>
+                  <led>
+                    <halpin>"reducer-left"</halpin>
+                  </led>
+                  <label>
+                    <font>("courier 10 pitch",10)</font>
+                    <text>"INPUT  0 / 28X2-11 / back gear LH"</text>
+                  </label>
+                </hbox>
+                <hbox>
+                  <led>
+                    <halpin>"reducer-right"</halpin>
+                  </led>
+                  <label>
+                    <font>("courier 10 pitch",10)</font>
+                    <text>"INPUT  1 / 28X2-11 / back gear RH"</text>
+                  </label>
+                </hbox>
+                <hbox>
+                  <led>
+                    <halpin>"reducer-center"</halpin>
+                  </led>
+                  <label>
+                    <font>("courier 10 pitch",10)</font>
+                    <text>"INPUT  2 / 28X2-13 / back gear mid"</text>
+                  </label>
+                </hbox>
+                <hbox>
+                  <led>
+                    <halpin>"reducer-left-center"</halpin>
+                  </led>
+                  <label>
+                    <font>("courier 10 pitch",10)</font>
+                    <text>"INPUT  3 / 28X2-14 / back gear LH-mid"</text>
+                  </label>
+                </hbox>
+              </vbox>
+            </labelframe>
+            <labelframe text="Midrange">
+              <vbox>
+                <hbox>
+                  <led>
+                    <halpin>"middle-left"</halpin>
+                  </led>
+                  <label>
+                    <font>("courier 10 pitch",10)</font>
+                    <text>"INPUT  4 / 28X2-15 / midrange LH"</text>
+                  </label>
+                </hbox>
+                <hbox>
+                  <led>
+                    <halpin>"middle-right"</halpin>
+                  </led>
+                  <label>
+                    <font>("courier 10 pitch",10)</font>
+                    <text>"INPUT  5 / 28X2-16 / midrange RH"</text>
+                  </label>
+                </hbox>
+                <hbox>
+                  <led>
+                    <halpin>"middle-center"</halpin>
+                  </led>
+                  <label>
+                    <font>("courier 10 pitch",10)</font>
+                    <text>"INPUT  6 / 28X2-17 / midrange mid"</text>
+                  </label>
+                </hbox>
+                <hbox>
+                  <led>
+                    <halpin>"middle-left-center"</halpin>
+                  </led>
+                  <label>
+                    <font>("courier 10 pitch",10)</font>
+                    <text>"INPUT  7 / 28X2-18 / midrange LH-mid"</text>
+                  </label>
+                </hbox>
+              </vbox>
+            </labelframe>
+            <labelframe text="Input Stage">
+              <vbox>
+                <hbox>
+                  <led>
+                    <halpin>"input-left"</halpin>
+                  </led>
+                  <label>
+                    <font>("courier 10 pitch",10)</font>
+                    <text>"INPUT  8 / 28X2-19 / input stage LH"</text>
+                  </label>
+                </hbox>
+                <hbox>
+                  <led>
+                    <halpin>"input-right"</halpin>
+                  </led>
+                  <label>
+                    <font>("courier 10 pitch",10)</font>
+                    <text>"INPUT  9 / 28X2-20 / input stage RH"</text>
+                  </label>
+                </hbox>
+                <hbox>
+                  <led>
+                    <halpin>"input-center"</halpin>
+                  </led>
+                  <label>
+                    <font>("courier 10 pitch",10)</font>
+                    <text>"INPUT 10 / 28X2-21 / input stage mid"</text>
+                  </label>
+                </hbox>
+                <hbox>
+                  <led>
+                    <halpin>"input-left-center"</halpin>
+                  </led>
+                  <label>
+                    <font>("courier 10 pitch",10)</font>
+                    <text>"INPUT 11 / 28X2-22 /input stage LH-mid"</text>
+                  </label>
+                </hbox>
+              </vbox>
+            </labelframe>
+          </vbox>
+        </labelframe>
+      </vbox>
+    </labelframe>
+    <labelframe text="Component Simulation">
+      <vbox>
+        <relief>FLAT</relief>
+        <bd>10</bd>
+        <labelframe text="Speed Settings">
+          <vbox>
+            <relief>FLAT</relief>
+            <bd>5</bd>
+            <vbox>
+              <relief>RIDGE</relief>
+              <bd>3</bd>
+              <label>
+                <text>"Desired spindles speed"</text>
+              </label>
+              <scale>
+                <halpin>"spindle-speed-in-abs"</halpin>
+                <resolution>10</resolution>
+                <orient>HORIZONTAL</orient>
+                <initval>0</initval>
+                <min_>0</min_>
+                <max_>4000</max_>
+                <param_pin>1</param_pin>
+              </scale>
+            </vbox>
+            <vbox>
+              <relief>RIDGE</relief>
+              <bd>3</bd>
+              <label>
+               <text>"Speed calculated from status pins"</text>
+              </label>
+              <bar>
+                <halpin>"spindle-speed-out"</halpin>
+                <max_>4000</max_>
+              </bar>
+            </vbox>
+          </vbox>
+        </labelframe>
+      </vbox>
+    </labelframe>
+  </hbox>
+</pyvcp>

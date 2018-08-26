@@ -1,0 +1,172 @@
+/*
+LinuxCNC component for controlling the MAHO MH400E gearbox.
+
+Copyright (C) 2018 Sergey 'Jin' Bostandzhyan <jin@mediatomb.cc>
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+component mh400e_gearbox_sim "Component allowing to partially simulate the MAHO MH400E gearbox";
+author "Sergey 'Jin' Bostandzhyan";
+license "GPL";
+
+pin in float simulated_speed_request_in "User input to select the gearbox speed for the simulation, will be quantized to nearest supported value";
+pin out float current_gearbox_speed_out "Current speed simulated by the component in revolutions per second";
+
+/* gearbox status pins from the MESA 7i84 */
+pin out bit reducer_left             "MESA 7i84 INPUT  0: 28X2-11";
+pin out bit reducer_right            "MESA 7i84 INPUT  1: 28X2-11";
+pin out bit reducer_center = true    "MESA 7i84 INPUT  2: 28X2-13";
+pin out bit reducer_left_center      "MESA 7i84 INPUT  3: 28X2-14";
+
+pin out bit middle_left              "MESA 7i84 INPUT  4: 28X2-15";
+pin out bit middle_right             "MESA 7i84 INPUT  5: 28X2-16";
+pin out bit middle_center            "MESA 7i84 INPUT  6: 28X2-17";
+pin out bit middle_left_center       "MESA 7i84 INPUT  7: 28X2-18";
+
+pin out bit input_left               "MESA 7i84 INPUT  8: 28X2-19";
+pin out bit input_right              "MESA 7i84 INPUT  9: 28X2-20";
+pin out bit input_center             "MESA 7i84 INPUT 10: 28X2-21";
+pin out bit input_left_center        "MESA 7i84 INPUT 11: 28X2-22";
+
+/* control pins, currently not supported by the simulator */
+pin in bit motor_center_pos        "MESA 7i84 OUTPUT 0: 28X1-8";
+pin in bit reducer_motor           "MESA 7i84 OUTPUT 1: 28X1-9";
+pin in bit middle_motor            "MESA 7i84 OUTPUT 2: 28X1-10";
+pin in bit input_motor             "MESA 7i84 OUTPUT 3: 28X1-11";
+pin in bit reverse_direction       "MESA 7i84 OUTPUT 4: 28X1-12";
+pin in bit start_gearbox_shift     "MESA 7i84 OUTPUT 5: 28X1-13";
+pin in bit twich_cw                "MESA 7i84 OUTPUT 6: 28X1-14";
+pin in bit twich_ccw               "MESA 7i84 OUTPUT 7: 28X1-15";
+
+function _;
+
+option singleton yes;
+
+;;
+
+#include <rtapi_math.h>
+
+#include "mh400e_common.h"
+#include "mh400e_util.h"
+
+static unsigned g_last_spindle_speed = 0;
+
+static pin_group_t g_backgear;
+static pin_group_t g_midrange;
+static pin_group_t g_input_stage;
+
+static tree_node_t *g_tree_rpm = NULL;
+
+static bool g_setup_done = false;
+
+/* one time setup, called from the main function to initialize whatever we
+ * need */
+FUNCTION(setup)
+{
+    /* grabbing the pin pointers in EXTRA_SETUP did not work because the
+     * component did not seem to be fully initializedt there */
+    g_backgear = (pin_group_t)
+    {
+        &(reducer_left),
+        &(reducer_right),
+        &(reducer_center),
+        &(reducer_left_center)
+    };
+
+    g_midrange = (pin_group_t)
+    {
+        &middle_left,
+        &middle_right,
+        &middle_center,
+        &middle_left_center
+    };
+
+    g_input_stage = (pin_group_t)
+    {
+        &input_left,
+        &input_right,
+        &input_center,
+        &input_left_center
+    };
+
+   /* build up binary tree from the gears array to search for rpm */
+    pair_t by_rpm[MH400E_NUM_GEARS];
+    for (int i = 0; i < MH400E_NUM_GEARS; i++)
+    {
+        by_rpm[i].key = mh400e_gears[i].key;
+        by_rpm[i].value = i;
+    }
+
+    g_tree_rpm = tree_from_sorted_array(by_rpm, MH400E_NUM_GEARS);
+}
+
+static pair_t *select_gear_from_rpm(float rpm)
+{
+    /* handle two cases that do not need extra searching */
+    if (rpm <= 0)
+    {
+        return &(mh400e_gears[MH400E_NEUTRAL_GEAR_INDEX]);
+    }
+    else if (rpm >= MH400E_MAX_RPM)
+    {
+        return &(mh400e_gears[MH400E_MAX_GEAR_INDEX]);
+    }
+    else if ((rpm > 0) && (rpm <= mh400e_gears[MH400E_MIN_RPM_INDEX].key))
+    {
+        /* special case: everything >0 but lower than the lowest gear
+         * should still return the lowest gear, because >0 means we want
+         * the spindle to rotate */
+        return &(mh400e_gears[1]);
+    }
+
+    tree_node_t *result = tree_search_closest_match(g_tree_rpm,
+                                                   (unsigned)round(rpm));
+
+    return &(mh400e_gears[result->value]);
+}
+
+
+static void set_pingroup(pin_group_t *group, unsigned char pins)
+{
+    for (int i = 0; i < MH400E_PINS_IN_GROUP; i++)
+    {
+        *(group->p[i]) = (pins >> i) & 1;
+    }
+}
+
+static void apply_gear_status_pins(pair_t *gear)
+{
+    set_pingroup(&g_backgear, (gear->value) & 0x000f);
+    set_pingroup(&g_midrange, (gear->value & 0x00f0) >> 4);
+    set_pingroup(&g_input_stage, (gear->value & 0x0f00) >> 8);
+}
+
+FUNCTION(_)
+{
+    if (!g_setup_done)
+    {
+        setup(__comp_inst, period);
+        g_setup_done = true;
+    }
+
+    if (g_last_spindle_speed != simulated_speed_request_in)
+    {
+        g_last_spindle_speed = simulated_speed_request_in;
+        pair_t *new_gear = select_gear_from_rpm(simulated_speed_request_in);
+        apply_gear_status_pins(new_gear);
+        current_gearbox_speed_out = new_gear->key;
+    }
+}

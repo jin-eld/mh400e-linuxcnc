@@ -1,0 +1,34 @@
+loadrt mh400e_gearbox_sim
+loadrt mh400e_gearbox
+
+loadusr -Wn mh400e_gearbox_gui pyvcp -c mh400e_gearbox_gui mh400e_gearbox.xml
+
+# connect simulator and the UI
+net gui-get-spindle-speed mh400e-gearbox-sim.current-gearbox-speed-out => mh400e_gearbox_gui.current-gearbox-speed-out
+net gui-set-spindle-speed mh400e-gearbox-sim.simulated-speed-request-in <= mh400e_gearbox_gui.simulated-speed-request-in-f
+net set-reducer-left mh400e-gearbox-sim.reducer-left => mh400e_gearbox_gui.reducer-left mh400e-gearbox.reducer-left
+net gui-set-reducer-right mh400e-gearbox-sim.reducer-right => mh400e_gearbox_gui.reducer-right mh400e-gearbox.reducer-right
+net gui-set-reducer-center mh400e-gearbox-sim.reducer-center => mh400e_gearbox_gui.reducer-center mh400e-gearbox.reducer-center
+net gui-set-reducer-left-center mh400e-gearbox-sim.reducer-left-center => mh400e_gearbox_gui.reducer-left-center mh400e-gearbox.reducer-left-center
+net gui-set-middle-left mh400e-gearbox-sim.middle-left => mh400e_gearbox_gui.middle-left mh400e-gearbox.middle-left
+net gui-set-middle-right mh400e-gearbox-sim.middle-right => mh400e_gearbox_gui.middle-right mh400e-gearbox.middle-right
+net gui-set-middle-center mh400e-gearbox-sim.middle-center => mh400e_gearbox_gui.middle-center mh400e-gearbox.middle-center
+net gui-set-left-center mh400e-gearbox-sim.middle-left-center => mh400e_gearbox_gui.middle-left-center mh400e-gearbox.middle-left-center
+net gui-set-input-left mh400e-gearbox-sim.input-left => mh400e_gearbox_gui.input-left mh400e-gearbox.input-left
+net gui-set-input-right mh400e-gearbox-sim.input-right => mh400e_gearbox_gui.input-right mh400e-gearbox.input-right
+net gui-set-input-center mh400e-gearbox-sim.input-center => mh400e_gearbox_gui.input-center mh400e-gearbox.input-center
+net gui-set-input-left-center mh400e-gearbox-sim.input-left-center => mh400e_gearbox_gui.input-left-center mh400e-gearbox.input-left-center
+
+# connect UI and the real component
+net set-spindle-speed-in-abs mh400e-gearbox.spindle-speed-in-abs <= mh400e_gearbox_gui.spindle-speed-in-abs-f
+net get-spindle-speed-out mh400e-gearbox.spindle-speed-out => mh400e_gearbox_gui.spindle-speed-out
+
+# running the thread extra slowly to simplify debugging console output
+loadrt threads name1=mh400e-sim-thread period1=100000000
+addf mh400e-gearbox-sim mh400e-sim-thread
+addf mh400e-gearbox mh400e-sim-thread
+start
+waitusr mh400e_gearbox_gui
+stop
+unload mh400e_gearbox
+unload mh400e_gearbox_sim

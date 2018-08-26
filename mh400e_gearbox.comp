@@ -1,0 +1,261 @@
+/*
+LinuxCNC component for controlling the MAHO MH400E gearbox.
+
+Copyright (C) 2018 Sergey 'Jin' Bostandzhyan <jin@mediatomb.cc>
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+component mh400e_gearbox "Component to control the MAHO mh400e gearbox to set the requested speed";
+author "Sergey 'Jin' Bostandzhyan";
+license "GPL";
+
+/* to be connected with motion.spindle−speed−out−abs */
+pin in float spindle_speed_in_abs "Desired spindle speed in rotations per minute, always positive regardless of spindle direction.";
+/* to be conneced with motion.spindle−speed−in */
+pin out float spindle_speed_out "Actual spindle speed feedback in revolutions per second";
+
+/* gearbox status pins from the MESA 7i84 */
+pin in bit reducer_left             "MESA 7i84 INPUT  0: 28X2-11";
+pin in bit reducer_right            "MESA 7i84 INPUT  1: 28X2-11";
+pin in bit reducer_center           "MESA 7i84 INPUT  2: 28X2-13";
+pin in bit reducer_left_center      "MESA 7i84 INPUT  3: 28X2-14";
+
+pin in bit middle_left              "MESA 7i84 INPUT  4: 28X2-15";
+pin in bit middle_right             "MESA 7i84 INPUT  5: 28X2-16";
+pin in bit middle_center            "MESA 7i84 INPUT  6: 28X2-17";
+pin in bit middle_left_center       "MESA 7i84 INPUT  7: 28X2-18";
+
+pin in bit input_left               "MESA 7i84 INPUT  8: 28X2-19";
+pin in bit input_right              "MESA 7i84 INPUT  9: 28X2-20";
+pin in bit input_center             "MESA 7i84 INPUT 10: 28X2-21";
+pin in bit input_left_center        "MESA 7i84 INPUT 11: 28X2-22";
+
+/* control pins */
+pin out bit motor_center_pos        "MESA 7i84 OUTPUT 0: 28X1-8";
+pin out bit reducer_motor           "MESA 7i84 OUTPUT 1: 28X1-9";
+pin out bit middle_motor            "MESA 7i84 OUTPUT 2: 28X1-10";
+pin out bit input_motor             "MESA 7i84 OUTPUT 3: 28X1-11";
+pin out bit reverse_direction       "MESA 7i84 OUTPUT 4: 28X1-12";
+pin out bit start_gearbox_shift     "MESA 7i84 OUTPUT 5: 28X1-13";
+pin out bit twich_cw                "MESA 7i84 OUTPUT 6: 28X1-14";
+pin out bit twich_ccw               "MESA 7i84 OUTPUT 7: 28X1-15";
+
+function _;
+
+option singleton yes;
+
+;;
+
+#include <rtapi_math.h>
+
+#include "mh400e_common.h"
+#include "mh400e_util.h"
+
+static float g_last_spindle_speed = 0;
+
+static pin_group_t g_backgear;
+static pin_group_t g_midrange;
+static pin_group_t g_input_stage;
+
+static unsigned char g_current_backgear_mask = 0;
+static unsigned char g_current_midrange_mask = 0;
+static unsigned char g_current_input_stage_mask = 0;
+
+static tree_node_t *g_tree_rpm = NULL;
+static tree_node_t *g_tree_mask = NULL;
+
+static bool g_setup_done = false;
+
+/* one time setup, called from the main function to initialize whatever we
+ * need */
+FUNCTION(setup)
+{
+    /* Grabbing the pin pointers in EXTRA_SETUP did not work because the
+     * component did not seem to be fully initializedt there.
+     *
+     * Another issue:
+     * while output pins are defined as (*__comp_inst->pin_name) by
+     * halcompile, input pins are turned into (0+*__comp_inst->pin_name)
+     * which makes it impossible to get the pointers via the defines
+     * created by halcompile. Accessing the pin variable directly did not
+     * work due to macro expansion, only workaround I found was to temporarily
+     * disable the macros.
+     */
+    #pragma push_macro("reducer_left")
+    #pragma push_macro("reducer_right")
+    #pragma push_macro("reducer_center")
+    #pragma push_macro("reducer_left_center")
+    #undef reducer_left
+    #undef reducer_right
+    #undef reducer_center
+    #undef reducer_left_center
+
+    g_backgear = (pin_group_t)
+    {
+        __comp_inst->reducer_left,
+        __comp_inst->reducer_right,
+        __comp_inst->reducer_center,
+        __comp_inst->reducer_left_center
+    };
+    #pragma pop_macro("reducer_left")
+    #pragma pop_macro("reducer_right")
+    #pragma pop_macro("reducer_center")
+    #pragma pop_macro("reducer_left_center")
+
+    #pragma push_macro("middle_left")
+    #pragma push_macro("middle_right")
+    #pragma push_macro("middle_center")
+    #pragma push_macro("middle_left_center")
+    #undef middle_left
+    #undef middle_right
+    #undef middle_center
+    #undef middle_left_center
+    g_midrange = (pin_group_t)
+    {
+        __comp_inst->middle_left,
+        __comp_inst->middle_right,
+        __comp_inst->middle_center,
+        __comp_inst->middle_left_center
+    };
+    #pragma pop_macro("middle_left")
+    #pragma pop_macro("middle_right")
+    #pragma pop_macro("middle_center")
+    #pragma pop_macro("middle_left_center")
+
+    #pragma push_macro("input_left")
+    #pragma push_macro("input_right")
+    #pragma push_macro("input_center")
+    #pragma push_macro("input_left_center")
+    #undef input_left
+    #undef input_right
+    #undef input_center
+    #undef input_left_center
+    g_input_stage = (pin_group_t)
+    {
+        __comp_inst->input_left,
+        __comp_inst->input_right,
+        __comp_inst->input_center,
+        __comp_inst->input_left_center
+    };
+    #pragma pop_macro("input_left")
+    #pragma pop_macro("input_right")
+    #pragma pop_macro("input_center")
+    #pragma pop_macro("input_left_center")
+
+    /* we want to have key:value pairs in the binary search tree, where
+     * the value represents the index of the key in our gears array. So
+     * we'll put things together the way we need them for the tree generation
+     */
+    pair_t temp[MH400E_NUM_GEARS];
+    for (int i = 0; i < MH400E_NUM_GEARS; i++)
+    {
+        temp[i].key = mh400e_gears[i].key;
+        temp[i].value = i;
+    }
+
+    /* build up binary tree from the gears array to search by rpm, this
+     * array is already sorted */
+    g_tree_rpm = tree_from_sorted_array(temp, MH400E_NUM_GEARS);
+
+    /* build up a key:value list where the bitmask from the m400e_gears
+     * array is the key and the index of the original position in the
+     * above array is the value */
+    for (int i = 0; i < MH400E_NUM_GEARS; i++)
+    {
+        temp[i].key = mh400e_gears[i].value;
+        temp[i].value = i;
+    }
+
+    /* sort the newly created array by key (needed for tree build up) */
+    sort_array_by_key(temp, MH400E_NUM_GEARS);
+
+    /* build up binary tree from the gears array to search for bitmask */
+    g_tree_mask = tree_from_sorted_array(temp, MH400E_NUM_GEARS);
+}
+
+/* combine values of all pins in a group to a bitmask */
+static unsigned char get_bitmask_from_pingroup(pin_group_t *group)
+{
+    unsigned char mask = 0;
+    for (int i = 0; i < MH400E_PINS_IN_GROUP; i++)
+    {
+        mask |= *(group->p[i]) << i;
+    }
+
+    return mask;
+}
+
+/* It's a tiny optimization to have these saved globally, because we will
+ * need the individual group values not only to determine the current spindle
+ * speed, but we will also use them when gear shifting. This way we do not
+ * have to construct these masks in local functions, essentially doing the
+ * same thing several times within one iteration of our main function. */
+static void update_current_pingroup_masks()
+{
+    g_current_backgear_mask = get_bitmask_from_pingroup(&g_backgear);
+    g_current_midrange_mask = get_bitmask_from_pingroup(&g_midrange);
+    g_current_input_stage_mask = get_bitmask_from_pingroup(&g_input_stage);
+}
+
+/* Combine masks from each pin group to a value representing the current
+ * gear setting. A return of NULL means that a corresponding value could
+ * not be found, which may indicate a gearshift being in progress- */
+static pair_t* get_current_gear()
+{
+    unsigned combined = (g_current_input_stage_mask << 8) |
+                        (g_current_midrange_mask << 4) |
+                         g_current_backgear_mask;
+
+    /* special case: ignore all other bits for neutral */
+    if (g_current_backgear_mask ==
+            mh400e_gears[MH400E_NEUTRAL_GEAR_INDEX].value) {
+        return &(mh400e_gears[MH400E_NEUTRAL_GEAR_INDEX]);
+    }
+
+    tree_node_t *result = tree_search(g_tree_mask, combined);
+    if (result != NULL)
+    {
+        return &(mh400e_gears[result->value]);
+    }
+    return NULL;
+}
+
+/* main component function */
+FUNCTION(_)
+{
+    /* perform one time setup */
+    if (!g_setup_done)
+    {
+        setup(__comp_inst, period);
+        g_setup_done = true;
+    }
+
+    /* read and update global mask variables for each pin group */
+    update_current_pingroup_masks();
+
+    /* determine and update current spindle speed information */
+    pair_t *speed = get_current_gear();
+    if (speed != NULL)
+    {
+        spindle_speed_out = (float)speed->key;
+    }
+
+    if (g_last_spindle_speed != spindle_speed_in_abs)
+    {
+        /* NEXT: this will be the actual fun part - controlling the gear
+         * shifts */
+    }
+}
