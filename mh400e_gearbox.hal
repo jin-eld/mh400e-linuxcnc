@@ -1,7 +1,9 @@
 loadrt mh400e_gearbox
 loadusr -Wn mh400e_gearbox_sim pyvcp -c mh400e_gearbox_sim mh400e_gearbox.xml
-net get-spindle-speed mh400e-gearbox.spindle-speed-out => mh400e_gearbox_sim.spindle-speed-out
+# Ouputs
 net set-spindle-speed mh400e-gearbox.spindle-speed-in-abs <= mh400e_gearbox_sim.spindle−speed−in−abs-f
+# Inputs
+net get-spindle-speed mh400e-gearbox.spindle-speed-out => mh400e_gearbox_sim.spindle-speed-out
 net set-reducer-left mh400e-gearbox.reducer-left => mh400e_gearbox_sim.reducer-left
 net set-reducer-right mh400e-gearbox.reducer-right => mh400e_gearbox_sim.reducer-right
 net set-reducer-center mh400e-gearbox.reducer-center => mh400e_gearbox_sim.reducer-center
