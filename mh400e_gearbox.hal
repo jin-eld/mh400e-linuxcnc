@@ -1,8 +1,8 @@
 loadrt mh400e_gearbox
 loadusr -Wn mh400e_gearbox_sim pyvcp -c mh400e_gearbox_sim mh400e_gearbox.xml
-# Ouputs
+# Inputs to LinuxCNC (Outputs from hardware)
 net set-spindle-speed mh400e-gearbox.spindle-speed-in-abs <= mh400e_gearbox_sim.spindle−speed−in−abs-f
-# Inputs
+# Outputs from LinuxCNC (Inputs to hardware)
 net get-spindle-speed mh400e-gearbox.spindle-speed-out => mh400e_gearbox_sim.spindle-speed-out
 net set-reducer-left mh400e-gearbox.reducer-left => mh400e_gearbox_sim.reducer-left
 net set-reducer-right mh400e-gearbox.reducer-right => mh400e_gearbox_sim.reducer-right
