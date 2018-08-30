@@ -38,12 +38,104 @@
             </vbox>
           </vbox>
         </labelframe>
+        <labelframe text="Gearbox Control Pins">
+          <vbox>
+            <relief>FLAT</relief>
+            <bd>5</bd>
+            <hbox>
+              <rectled height="20" width="20">
+                <halpin>"start-gear-shift"</halpin>
+              </rectled>
+              <label>
+                <font>("courier 10 pitch",10)</font>
+                <text>"Start gear shift"</text>
+              </label>
+            </hbox>
+            <hbox>
+              <rectled height="20" width="20">
+                <halpin>"reverse-motor-direction"</halpin>
+              </rectled>
+              <label>
+                <font>("courier 10 pitch",10)</font>
+                <text>"Reverse shaft motor direction"</text>
+              </label>
+            </hbox>
+            <hbox>
+              <rectled height="20" width="20">
+                <halpin>"backgear-motor"</halpin>
+              </rectled>
+              <label>
+                <font>("courier 10 pitch",10)</font>
+                <text>"Backger shaft motor"</text>
+              </label>
+            </hbox>
+            <hbox>
+              <rectled height="20" width="20">
+                <halpin>"midrange-motor"</halpin>
+              </rectled>
+              <label>
+                <font>("courier 10 pitch",10)</font>
+                <text>"Midrange shaft motor"</text>
+              </label>
+            </hbox>
+            <hbox>
+              <rectled height="20" width="20">
+                <halpin>"midrange-motor-lowspeed"</halpin>
+              </rectled>
+              <label>
+                <font>("courier 10 pitch",10)</font>
+                <text>"Midrange shaft motor speed reduction"</text>
+              </label>
+            </hbox>
+            <hbox>
+              <rectled height="20" width="20">
+                <halpin>"input-stage-motor"</halpin>
+              </rectled>
+              <label>
+                <font>("courier 10 pitch",10)</font>
+                <text>"Input stage shaft motor"</text>
+              </label>
+            </hbox>
+          </vbox>
+        </labelframe>
+        <labelframe text="Spindle Pins">
+          <hbox>
+            <relief>FLAT</relief>
+            <bd>5</bd>
+            <rectled height="20" width="20">
+              <halpin>"spindle-twich-cw-in"</halpin>
+            </rectled>
+            <label>
+              <font>("courier 10 pitch",10)</font>
+              <text>"CW"</text>
+            </label>
+            <rectled height="20" width="20">
+              <halpin>"spindle-twich-ccw-in"</halpin>
+            </rectled>
+            <label>
+              <font>("courier 10 pitch",10)</font>
+              <text>"CCW"</text>
+            </label>
+            <checkbutton>
+              <halpin>"spindle-stopped"</halpin>
+              <text>"Spindle stopped"</text>
+              <initval>0</initval>
+            </checkbutton>
+            <checkbutton>
+              <halpin>"motion-stopped"</halpin>
+              <text>"Spindle and motion stopped"</text>
+              <initval>0</initval>
+            </checkbutton>
+          </hbox>
+        </labelframe>
         <labelframe text="Gearbox Status Pins">
           <vbox>
             <relief>FLAT</relief>
             <bd>5</bd>
             <labelframe text="Backgear">
               <vbox>
+                <relief>FLAT</relief>
+                <bd>5</bd>
                 <hbox>
                   <led>
                     <halpin>"reducer-left"</halpin>
@@ -84,6 +176,8 @@
             </labelframe>
             <labelframe text="Midrange">
               <vbox>
+                <relief>FLAT</relief>
+                <bd>5</bd>
                 <hbox>
                   <led>
                     <halpin>"middle-left"</halpin>
@@ -124,6 +218,8 @@
             </labelframe>
             <labelframe text="Input Stage">
               <vbox>
+                <relief>FLAT</relief>
+                <bd>5</bd>
                 <hbox>
                   <led>
                     <halpin>"input-left"</halpin>
@@ -201,6 +297,30 @@
                 <max_>4000</max_>
               </bar>
             </vbox>
+          </vbox>
+        </labelframe>
+        <labelframe text="Spindle motion pins">
+          <vbox>
+            <relief>FLAT</relief>
+            <bd>5</bd>
+            <hbox>
+              <led>
+                <halpin>"spindle-stopped-in"</halpin>
+              </led>
+              <label>
+                <font>("courier 10 pitch",10)</font>
+                <text>"Spindle stopped status pin"</text>
+              </label>
+            </hbox>
+            <hbox>
+              <led>
+                <halpin>"motion-stopped-in"</halpin>
+              </led>
+              <label>
+                <font>("courier 10 pitch",10)</font>
+                <text>"Spindle and motion stopped status pin"</text>
+              </label>
+            </hbox>
           </vbox>
         </labelframe>
       </vbox>
