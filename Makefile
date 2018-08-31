@@ -1,7 +1,15 @@
-mh400e_gearbox.so: mh400e_gearbox.comp mh400e_common.h mh400e_util.h
+mh400e_gearbox.so: \
+		mh400e_gearbox.comp \
+		mh400e_common.h \
+		mh400e_util.h \
+		mh400e_util.c
 	@halcompile --compile mh400e_gearbox.comp
 
-mh400e_gearbox_sim.so: mh400e_gearbox_sim.comp mh400e_common.h mh400e_util.h
+mh400e_gearbox_sim.so: \
+		mh400e_gearbox_sim.comp \
+		mh400e_common.h \
+		mh400e_util.h \
+		mh400e_util.c
 	@halcompile --compile mh400e_gearbox_sim.comp
 
 gearbox: mh400e_gearbox.so
