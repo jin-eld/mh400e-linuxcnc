@@ -16,8 +16,8 @@ net set-input-left mh400e-gearbox.input-left => mh400e_gearbox_sim.input-left
 net set-input-right mh400e-gearbox.input-right => mh400e_gearbox_sim.input-right
 net set-input-center mh400e-gearbox.input-center => mh400e_gearbox_sim.input-center
 net set-input-left-center mh400e-gearbox.input-left-center => mh400e_gearbox_sim.input-left-center
-# remove 2 zeroes later
-loadrt threads name1=mh400e-sim-thread period1=100000000
+
+loadrt threads name1=mh400e-sim-thread period1=1000000
 addf mh400e-gearbox mh400e-sim-thread
 start
 waitusr mh400e_gearbox_sim

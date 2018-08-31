@@ -22,8 +22,8 @@ component mh400e_gearbox_sim "Component allowing to partially simulate the MAHO 
 author "Sergey 'Jin' Bostandzhyan";
 license "GPL";
 
-pin in float simulated_speed_request_in "User input to select the gearbox speed for the simulation, will be quantized to nearest supported value";
-pin out float current_gearbox_speed_out "Current speed simulated by the component in revolutions per second";
+pin in float simulated_speed_request_in = 0"User input to select the gearbox speed for the simulation, will be quantized to nearest supported value";
+pin out float current_gearbox_speed_out  = 0 "Current speed simulated by the component in revolutions per second";
 
 /* gearbox status pins from the MESA 7i84 */
 pin out bit reducer_left             "MESA 7i84 INPUT  0: 28X2-11";
@@ -42,12 +42,12 @@ pin out bit input_center             "MESA 7i84 INPUT 10: 28X2-21";
 pin out bit input_left_center        "MESA 7i84 INPUT 11: 28X2-22";
 
 /* control pins, currently not supported by the simulator */
-pin in bit motor_center_pos        "MESA 7i84 OUTPUT 0: 28X1-8";
+pin in bit motor_lowspeed          "MESA 7i84 OUTPUT 0: 28X1-8";
 pin in bit reducer_motor           "MESA 7i84 OUTPUT 1: 28X1-9";
-pin in bit middle_motor            "MESA 7i84 OUTPUT 2: 28X1-10";
+pin in bit midrange_motor          "MESA 7i84 OUTPUT 2: 28X1-10";
 pin in bit input_motor             "MESA 7i84 OUTPUT 3: 28X1-11";
 pin in bit reverse_direction       "MESA 7i84 OUTPUT 4: 28X1-12";
-pin in bit start_gearbox_shift     "MESA 7i84 OUTPUT 5: 28X1-13";
+pin in bit start_shift             "MESA 7i84 OUTPUT 5: 28X1-13";
 pin in bit twich_cw                "MESA 7i84 OUTPUT 6: 28X1-14";
 pin in bit twich_ccw               "MESA 7i84 OUTPUT 7: 28X1-15";
 

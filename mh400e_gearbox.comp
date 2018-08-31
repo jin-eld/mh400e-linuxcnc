@@ -23,9 +23,9 @@ author "Sergey 'Jin' Bostandzhyan";
 license "GPL";
 
 /* to be connected with motion.spindle−speed−out−abs */
-pin in float spindle_speed_in_abs "Desired spindle speed in rotations per minute, always positive regardless of spindle direction.";
+pin in float spindle_speed_in_abs = 0 "Desired spindle speed in rotations per minute, always positive regardless of spindle direction.";
 /* to be conneced with motion.spindle−speed−in */
-pin out float spindle_speed_out "Actual spindle speed feedback in revolutions per second";
+pin out float spindle_speed_out = 0 "Actual spindle speed feedback in revolutions per second";
 
 /* gearbox status pins from the MESA 7i84 */
 pin in bit reducer_left             "MESA 7i84 INPUT  0: 28X2-11";
@@ -43,15 +43,19 @@ pin in bit input_right              "MESA 7i84 INPUT  9: 28X2-20";
 pin in bit input_center             "MESA 7i84 INPUT 10: 28X2-21";
 pin in bit input_left_center        "MESA 7i84 INPUT 11: 28X2-22";
 
+/* spindle motion status pins */
+pin in bit spindle_stopped     = 0  "MESA 7i84 INPUT 19: TB2-4";
+pin in bit motion_stopped      = 0  "MESA 7i84 INPUT 20: TB2-5";
+
 /* control pins */
-pin out bit motor_center_pos        "MESA 7i84 OUTPUT 0: 28X1-8";
-pin out bit reducer_motor           "MESA 7i84 OUTPUT 1: 28X1-9";
-pin out bit middle_motor            "MESA 7i84 OUTPUT 2: 28X1-10";
-pin out bit input_motor             "MESA 7i84 OUTPUT 3: 28X1-11";
-pin out bit reverse_direction       "MESA 7i84 OUTPUT 4: 28X1-12";
-pin out bit start_gearbox_shift     "MESA 7i84 OUTPUT 5: 28X1-13";
-pin out bit twich_cw                "MESA 7i84 OUTPUT 6: 28X1-14";
-pin out bit twich_ccw               "MESA 7i84 OUTPUT 7: 28X1-15";
+pin out bit motor_lowspeed     = 0  "MESA 7i84 OUTPUT 0: 28X1-8";
+pin out bit reducer_motor      = 0  "MESA 7i84 OUTPUT 1: 28X1-9";
+pin out bit midrange_motor     = 0  "MESA 7i84 OUTPUT 2: 28X1-10";
+pin out bit input_stage_motor  = 0  "MESA 7i84 OUTPUT 3: 28X1-11";
+pin out bit reverse_direction  = 0  "MESA 7i84 OUTPUT 4: 28X1-12";
+pin out bit start_gear_shift   = 0  "MESA 7i84 OUTPUT 5: 28X1-13";
+pin out bit twich_cw           = 0  "MESA 7i84 OUTPUT 6: 28X1-14";
+pin out bit twich_ccw          = 0  "MESA 7i84 OUTPUT 7: 28X1-15";
 
 function _;
 

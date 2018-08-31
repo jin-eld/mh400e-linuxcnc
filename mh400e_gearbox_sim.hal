@@ -22,9 +22,19 @@ net gui-set-input-left-center mh400e-gearbox-sim.input-left-center => mh400e_gea
 # connect UI and the real component
 net set-spindle-speed-in-abs mh400e-gearbox.spindle-speed-in-abs <= mh400e_gearbox_gui.spindle-speed-in-abs-f
 net get-spindle-speed-out mh400e-gearbox.spindle-speed-out => mh400e_gearbox_gui.spindle-speed-out
+net gui-set-spindle-stopped mh400e_gearbox_gui.spindle-stopped => mh400e-gearbox.spindle-stopped mh400e_gearbox_gui.spindle-stopped-in
+net gui-set-motion-stopped mh400e_gearbox_gui.motion-stopped => mh400e-gearbox.motion-stopped mh400e_gearbox_gui.motion-stopped-in
 
+net set-gear-shift-start mh400e-gearbox.start-gear-shift => mh400e_gearbox_gui.start-gear-shift
+net set-reverse-shaft-motor mh400e-gearbox.reverse-direction => mh400e_gearbox_gui.reverse-motor-direction
+net activate-reducer-motor mh400e-gearbox.reducer-motor => mh400e_gearbox_gui.reducer-motor
+net activate-midrange-motor mh400e-gearbox.midrange-motor => mh400e_gearbox_gui.midrange-motor
+net set-shaft-motor-lowspeed mh400e-gearbox.motor-lowspeed => mh400e_gearbox_gui.motor-lowspeed
+net activate-input-stage-motor mh400e-gearbox.input-stage-motor => mh400e_gearbox_gui.input-stage-motor
+net activate-spindle-twich-cw mh400e-gearbox.twich-cw => mh400e_gearbox_gui.spindle-twich-cw-in
+net activate-spindle-twich-ccw mh400e-gearbox.twich-ccw => mh400e_gearbox_gui.spindle-twich-ccw-in
 # running the thread extra slowly to simplify debugging console output
-loadrt threads name1=mh400e-sim-thread period1=100000000
+loadrt threads name1=mh400e-sim-thread period1=1000000
 addf mh400e-gearbox-sim mh400e-sim-thread
 addf mh400e-gearbox mh400e-sim-thread
 start
