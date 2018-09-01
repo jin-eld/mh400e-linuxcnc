@@ -31,8 +31,8 @@ net activate-reducer-motor mh400e-gearbox.reducer-motor => mh400e_gearbox_gui.re
 net activate-midrange-motor mh400e-gearbox.midrange-motor => mh400e_gearbox_gui.midrange-motor
 net set-shaft-motor-lowspeed mh400e-gearbox.motor-lowspeed => mh400e_gearbox_gui.motor-lowspeed
 net activate-input-stage-motor mh400e-gearbox.input-stage-motor => mh400e_gearbox_gui.input-stage-motor
-net activate-spindle-twich-cw mh400e-gearbox.twich-cw => mh400e_gearbox_gui.spindle-twich-cw-in
-net activate-spindle-twich-ccw mh400e-gearbox.twich-ccw => mh400e_gearbox_gui.spindle-twich-ccw-in
+net activate-spindle-twitch-cw mh400e-gearbox.twitch-cw => mh400e_gearbox_gui.spindle-twitch-cw-in
+net activate-spindle-twitch-ccw mh400e-gearbox.twitch-ccw => mh400e_gearbox_gui.spindle-twitch-ccw-in
 # running the thread extra slowly to simplify debugging console output
 loadrt threads name1=mh400e-sim-thread period1=1000000
 addf mh400e-gearbox-sim mh400e-sim-thread

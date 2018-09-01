@@ -48,8 +48,8 @@ pin in bit midrange_motor          "MESA 7i84 OUTPUT 2: 28X1-10";
 pin in bit input_motor             "MESA 7i84 OUTPUT 3: 28X1-11";
 pin in bit reverse_direction       "MESA 7i84 OUTPUT 4: 28X1-12";
 pin in bit start_shift             "MESA 7i84 OUTPUT 5: 28X1-13";
-pin in bit twich_cw                "MESA 7i84 OUTPUT 6: 28X1-14";
-pin in bit twich_ccw               "MESA 7i84 OUTPUT 7: 28X1-15";
+pin in bit twitch_cw               "MESA 7i84 OUTPUT 6: 28X1-14";
+pin in bit twitch_ccw              "MESA 7i84 OUTPUT 7: 28X1-15";
 
 function _;
 

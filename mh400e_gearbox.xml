@@ -103,14 +103,14 @@
             <relief>FLAT</relief>
             <bd>5</bd>
             <rectled height="20" width="20">
-              <halpin>"spindle-twich-cw-in"</halpin>
+              <halpin>"spindle-twitch-cw-in"</halpin>
             </rectled>
             <label>
               <font>("courier 10 pitch",10)</font>
               <text>"CW"</text>
             </label>
             <rectled height="20" width="20">
-              <halpin>"spindle-twich-ccw-in"</halpin>
+              <halpin>"spindle-twitch-ccw-in"</halpin>
             </rectled>
             <label>
               <font>("courier 10 pitch",10)</font>
