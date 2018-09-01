@@ -67,6 +67,7 @@ option singleton yes;
 
 #include "mh400e_common.h"
 #include "mh400e_util.h"
+#include "mh400e_twitch.h"
 
 static float g_last_spindle_speed = 0;
 
@@ -82,11 +83,15 @@ static tree_node_t *g_tree_rpm = NULL;
 static tree_node_t *g_tree_mask = NULL;
 
 static bool g_setup_done = false;
+static bool g_last_spindle_stopped = false;
 
 /* one time setup, called from the main function to initialize whatever we
  * need */
 FUNCTION(setup)
 {
+    /* Initialize twitch data structure */
+    twitch_setup(__comp_inst, period);
+
     /* Grabbing the pin pointers in EXTRA_SETUP did not work because the
      * component did not seem to be fully initializedt there.
      *
@@ -188,6 +193,8 @@ FUNCTION(setup)
 
     /* build up binary tree from the gears array to search for bitmask */
     g_tree_mask = tree_from_sorted_array(temp, MH400E_NUM_GEARS);
+
+    g_last_spindle_stopped = spindle_stopped;
 }
 
 /* combine values of all pins in a group to a bitmask */
@@ -257,9 +264,26 @@ FUNCTION(_)
         spindle_speed_out = (float)speed->key;
     }
 
+    twitch_handle(period);
+
     if (g_last_spindle_speed != spindle_speed_in_abs)
     {
         /* NEXT: this will be the actual fun part - controlling the gear
          * shifts */
+    }
+
+    if (g_last_spindle_stopped != spindle_stopped)
+    {
+        /* TODO: remove... for now this test code triggers twitching */
+        if (spindle_stopped)
+        {
+            twitch_start(period);
+        }
+        else
+        {
+            twitch_stop(period);
+        }
+
+        g_last_spindle_stopped = spindle_stopped;
     }
 }

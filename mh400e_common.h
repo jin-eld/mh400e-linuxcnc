@@ -72,4 +72,10 @@ static pair_t mh400e_gears[] =
 /* max spindle rpm supported by the MH400E */
 #define MH400E_MAX_RPM              4000
 
+#define MH400E_TWITCH_KEEP_PIN_ON   800*1000000 /* 800ms in nanoseconds */
+#define MH400E_TWITCH_KEEP_PIN_OFF  200*1000000 /* 200ms in nanoseconds */
+
+/* generic state function */
+typedef void (*statefunc)(long period);
+
 #endif//__MH400E_COMMON_H__
