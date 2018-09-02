@@ -57,6 +57,9 @@ pin out bit start_gear_shift   = 0  "MESA 7i84 OUTPUT 5: 28X1-13";
 pin out bit twitch_cw          = 0  "MESA 7i84 OUTPUT 6: 28X1-14";
 pin out bit twitch_ccw         = 0  "MESA 7i84 OUTPUT 7: 28X1-15";
 
+pin out bit estop_out          = 0  "This pin will trigger emergency stop in case of an unrecoverably fatal error.";
+pin in bit estop_in                 "This pin notifies us that an emergency stop was triggered outside the component.";
+
 function _;
 
 option singleton yes;

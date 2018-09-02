@@ -122,7 +122,8 @@ static void twitch_do(long period)
     {
         rtapi_print_msg(RTAPI_MSG_ERR, "mh400e_gearbox FATAL ERROR: twitch "
                         "cw + ccw are on, triggering E-Stop!\n");
-        /* TODO: trigger E-STOP */
+        /* TODO: trigger e-stop and specify component behavior in
+         * emergency stop condition */
     }
 }
 
