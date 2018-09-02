@@ -45,7 +45,7 @@ pin in bit input_left_center        "MESA 7i84 INPUT 11: 28X2-22";
 
 /* spindle motion status pins */
 pin in bit spindle_stopped     = 0  "MESA 7i84 INPUT 19: TB2-4";
-pin in bit motion_stopped      = 0  "MESA 7i84 INPUT 20: TB2-5";
+pin in bit all_motion_stopped  = 0  "MESA 7i84 INPUT 20: TB2-5";
 
 /* control pins */
 pin out bit motor_lowspeed     = 0  "MESA 7i84 OUTPUT 0: 28X1-8";

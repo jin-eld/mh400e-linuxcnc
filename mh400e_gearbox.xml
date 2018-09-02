@@ -16,7 +16,7 @@
                 <text>"Initial gearbox speed"</text>
               </label>
               <scale>
-                <halpin>"simulated-speed-request-in"</halpin>
+                <halpin>"sim-speed-request-in"</halpin>
                 <resolution>10</resolution>
                 <orient>HORIZONTAL</orient>
                 <initval>0</initval>
@@ -32,7 +32,7 @@
                <text>"Supported speed"</text>
               </label>
               <bar>
-                <halpin>"current-gearbox-speed-out"</halpin>
+                <halpin>"sim-gearbox-speed-out"</halpin>
                 <max_>4000</max_>
               </bar>
             </vbox>
@@ -117,12 +117,12 @@
               <text>"CCW"</text>
             </label>
             <checkbutton>
-              <halpin>"spindle-stopped"</halpin>
+              <halpin>"sim-spindle-stopped"</halpin>
               <text>"Spindle stopped"</text>
               <initval>0</initval>
             </checkbutton>
             <checkbutton>
-              <halpin>"motion-stopped"</halpin>
+              <halpin>"sim-all-motion-stopped"</halpin>
               <text>"Spindle and motion stopped"</text>
               <initval>0</initval>
             </checkbutton>
@@ -305,7 +305,7 @@
             <bd>5</bd>
             <hbox>
               <led>
-                <halpin>"spindle-stopped-in"</halpin>
+                <halpin>"spindle-stopped"</halpin>
               </led>
               <label>
                 <font>("courier 10 pitch",10)</font>
@@ -314,7 +314,7 @@
             </hbox>
             <hbox>
               <led>
-                <halpin>"motion-stopped-in"</halpin>
+                <halpin>"all-motion-stopped"</halpin>
               </led>
               <label>
                 <font>("courier 10 pitch",10)</font>
