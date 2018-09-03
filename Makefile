@@ -1,6 +1,8 @@
 mh400e_gearbox.so: \
 		mh400e_common.h \
 		mh400e_gearbox.comp \
+		mh400e_gears.h \
+		mh400e_gears.c \
 		mh400e_twitch.h \
 		mh400e_twitch.c \
 		mh400e_util.h \
@@ -10,6 +12,8 @@ mh400e_gearbox.so: \
 mh400e_gearbox_sim.so: \
 		mh400e_gearbox_sim.comp \
 		mh400e_common.h \
+		mh400e_gears.h \
+		mh400e_gears.c \
 		mh400e_util.h \
 		mh400e_util.c
 	@halcompile --compile mh400e_gearbox_sim.comp

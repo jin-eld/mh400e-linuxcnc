@@ -77,6 +77,22 @@ static tree_node_t *tree_search(tree_node_t *root, unsigned key);
 /* Simple bubble sort to get our gear arrays in order. */
 static void sort_array_by_key(pair_t array[], size_t length);
 
+/* Find the closest matching gear that is supported by the MH400E.
+ *
+ * Everything <= 0 is matched to 0. Everything >4000 is matched to 4000,
+ * which is the maximum supported speed.
+ * Everything in the range 0 < rpm < 80 is matched to 80 (lowest supported
+ * speed), since we assume that a value higher than zero implies spindle
+ * movement.
+ *
+ * Note, that this function does no actually perform any pin writing operations,
+ * is only quantizes the input rpm to a supported speed.
+ *
+ * Returns speed "pair" where rpm is stored in the "key" and the pin bitmask
+ * is stored in "value".
+ */
+static pair_t *select_gear_from_rpm(tree_node_t *tree, float rpm);
+
 /* really ugly way of keeping more order and splitting the sources,
  * halcompile does not allow to link multipe source files together, so
  * ultimately all sources need to be included by the .comp directly */

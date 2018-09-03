@@ -243,3 +243,28 @@ void sort_array_by_key(pair_t array[], size_t length)
         }
     }
 }
+
+static pair_t *select_gear_from_rpm(tree_node_t *tree, float rpm)
+{
+    /* handle two cases that do not need extra searching */
+    if (rpm <= 0)
+    {
+        return &(mh400e_gears[MH400E_NEUTRAL_GEAR_INDEX]);
+    }
+    else if (rpm >= MH400E_MAX_RPM)
+    {
+        return &(mh400e_gears[MH400E_MAX_GEAR_INDEX]);
+    }
+    else if ((rpm > 0) && (rpm <= mh400e_gears[MH400E_MIN_RPM_INDEX].key))
+    {
+        /* special case: everything >0 but lower than the lowest gear
+         * should still return the lowest gear, because >0 means we want
+         * the spindle to rotate */
+        return &(mh400e_gears[MH400E_MIN_RPM_INDEX]);
+    }
+
+    tree_node_t *result = tree_search_closest_match(tree, (unsigned)round(rpm));
+
+    return &(mh400e_gears[result->value]);
+}
+

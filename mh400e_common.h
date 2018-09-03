@@ -35,6 +35,19 @@ typedef struct
     unsigned value;
 } pair_t;
 
+
+/* Each shaft is described by 4 bits:
+ *                3        2       1      0
+ * msb "left center" "center" "right" "left" lsb
+ *
+ * The table below provides the mask for all three shafts.
+ * The helper macros should be used on an extracted 4 bit value.
+ */
+#define MH400E_STAGE_IS_LEFT(mask)          (mask & 1)
+#define MH400E_STAGE_IS_RIGHT(mask)         ((mask >> 1) & 1)
+#define MH400E_STAGE_IS_CENTER(mask)        ((mask >> 2) & 1)
+#define MH400E_STAGE_IS_LEFT_CENTER(mask)   ((mask >> 3) & 1)
+
 /* lookup table from rpm to gearbox status pin values */
 static pair_t mh400e_gears[] =
 {  /* rpm   bitmask                msb 11 10 9 8 7 6 5 4 3 2 1 0 lsb */
@@ -75,6 +88,16 @@ static pair_t mh400e_gears[] =
 #define MH400E_TWITCH_KEEP_PIN_ON   800*1000000 /* 800ms in nanoseconds */
 #define MH400E_TWITCH_KEEP_PIN_OFF  200*1000000 /* 200ms in nanoseconds */
 
+/* This value needs to be tuned, for now randomly picking 100ms */
+#define MH400E_GEAR_STAGE_POLL_INTERVAL 100*1000000 /* 100ms in nanoseconds */
+
+/* If reverse direction needs to be activated, we have to wait 100ms before
+ * we activate the motor after the reverse pin has been activated or
+ * deactivated */
+#define MH400E_REVERSE_MOTOR_INTERVAL   100*1000000 /* 100ms in nanoseconds */
+
+/* Interval between all remaining pin operations related to gear shifting */
+#define MH400E_GENERIC_PIN_INTERVAL     100*1000000 /* 100ms in nanoseconds */
 /* generic state function */
 typedef void (*statefunc)(long period);
 

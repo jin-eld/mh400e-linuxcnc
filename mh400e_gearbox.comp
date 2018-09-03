@@ -43,9 +43,11 @@ pin in bit input_right              "MESA 7i84 INPUT  9: 28X2-20";
 pin in bit input_center             "MESA 7i84 INPUT 10: 28X2-21";
 pin in bit input_left_center        "MESA 7i84 INPUT 11: 28X2-22";
 
-/* spindle motion status pins */
+/* spindle status pin */
 pin in bit spindle_stopped     = 0  "MESA 7i84 INPUT 19: TB2-4";
-pin in bit all_motion_stopped  = 0  "MESA 7i84 INPUT 20: TB2-5";
+
+pin out bit stop_spindle       = 0;
+pin out bit spindle_at_speed   = 0;
 
 /* control pins */
 pin out bit motor_lowspeed     = 0  "MESA 7i84 OUTPUT 0: 28X1-8";
@@ -70,7 +72,7 @@ option singleton yes;
 
 #include "mh400e_common.h"
 #include "mh400e_util.h"
-#include "mh400e_twitch.h"
+#include "mh400e_gears.h"
 
 static float g_last_spindle_speed = 0;
 
@@ -86,86 +88,14 @@ static tree_node_t *g_tree_rpm = NULL;
 static tree_node_t *g_tree_mask = NULL;
 
 static bool g_setup_done = false;
-static bool g_last_spindle_stopped = false;
 
 /* one time setup, called from the main function to initialize whatever we
  * need */
 FUNCTION(setup)
 {
-    /* Initialize twitch data structure */
+    /* Initialize state data structures */
+    gearbox_setup(__comp_inst, period);
     twitch_setup(__comp_inst, period);
-
-    /* Grabbing the pin pointers in EXTRA_SETUP did not work because the
-     * component did not seem to be fully initializedt there.
-     *
-     * Another issue:
-     * while output pins are defined as (*__comp_inst->pin_name) by
-     * halcompile, input pins are turned into (0+*__comp_inst->pin_name)
-     * which makes it impossible to get the pointers via the defines
-     * created by halcompile. Accessing the pin variable directly did not
-     * work due to macro expansion, only workaround I found was to temporarily
-     * disable the macros.
-     */
-    #pragma push_macro("reducer_left")
-    #pragma push_macro("reducer_right")
-    #pragma push_macro("reducer_center")
-    #pragma push_macro("reducer_left_center")
-    #undef reducer_left
-    #undef reducer_right
-    #undef reducer_center
-    #undef reducer_left_center
-
-    g_backgear = (pin_group_t)
-    {
-        __comp_inst->reducer_left,
-        __comp_inst->reducer_right,
-        __comp_inst->reducer_center,
-        __comp_inst->reducer_left_center
-    };
-    #pragma pop_macro("reducer_left")
-    #pragma pop_macro("reducer_right")
-    #pragma pop_macro("reducer_center")
-    #pragma pop_macro("reducer_left_center")
-
-    #pragma push_macro("middle_left")
-    #pragma push_macro("middle_right")
-    #pragma push_macro("middle_center")
-    #pragma push_macro("middle_left_center")
-    #undef middle_left
-    #undef middle_right
-    #undef middle_center
-    #undef middle_left_center
-    g_midrange = (pin_group_t)
-    {
-        __comp_inst->middle_left,
-        __comp_inst->middle_right,
-        __comp_inst->middle_center,
-        __comp_inst->middle_left_center
-    };
-    #pragma pop_macro("middle_left")
-    #pragma pop_macro("middle_right")
-    #pragma pop_macro("middle_center")
-    #pragma pop_macro("middle_left_center")
-
-    #pragma push_macro("input_left")
-    #pragma push_macro("input_right")
-    #pragma push_macro("input_center")
-    #pragma push_macro("input_left_center")
-    #undef input_left
-    #undef input_right
-    #undef input_center
-    #undef input_left_center
-    g_input_stage = (pin_group_t)
-    {
-        __comp_inst->input_left,
-        __comp_inst->input_right,
-        __comp_inst->input_center,
-        __comp_inst->input_left_center
-    };
-    #pragma pop_macro("input_left")
-    #pragma pop_macro("input_right")
-    #pragma pop_macro("input_center")
-    #pragma pop_macro("input_left_center")
 
     /* we want to have key:value pairs in the binary search tree, where
      * the value represents the index of the key in our gears array. So
@@ -197,59 +127,44 @@ FUNCTION(setup)
     /* build up binary tree from the gears array to search for bitmask */
     g_tree_mask = tree_from_sorted_array(temp, MH400E_NUM_GEARS);
 
-    g_last_spindle_stopped = spindle_stopped;
+    g_last_spindle_speed = spindle_speed_in_abs;
 }
 
-/* combine values of all pins in a group to a bitmask */
-static unsigned char get_bitmask_from_pingroup(pin_group_t *group)
+/* When e-stop is triggered from the outside everything is already powered
+ * off, but we want to make sure that our pins are also inactive should
+ * the power come back. We don't have to care about timings here, because
+ * everything is already off at this point. */
+FUNCTION(handle_external_e_stop)
 {
-    unsigned char mask = 0;
-    for (int i = 0; i < MH400E_PINS_IN_GROUP; i++)
-    {
-        mask |= *(group->p[i]) << i;
-    }
+    reducer_motor = false;
+    input_stage_motor = false;
+    midrange_motor = false;
 
-    return mask;
-}
+    motor_lowspeed = false;
+    reverse_direction = false;
 
-/* It's a tiny optimization to have these saved globally, because we will
- * need the individual group values not only to determine the current spindle
- * speed, but we will also use them when gear shifting. This way we do not
- * have to construct these masks in local functions, essentially doing the
- * same thing several times within one iteration of our main function. */
-static void update_current_pingroup_masks()
-{
-    g_current_backgear_mask = get_bitmask_from_pingroup(&g_backgear);
-    g_current_midrange_mask = get_bitmask_from_pingroup(&g_midrange);
-    g_current_input_stage_mask = get_bitmask_from_pingroup(&g_input_stage);
-}
+    twitch_cw = false;
+    twitch_ccw = false;
 
-/* Combine masks from each pin group to a value representing the current
- * gear setting. A return of NULL means that a corresponding value could
- * not be found, which may indicate a gearshift being in progress- */
-static pair_t* get_current_gear()
-{
-    unsigned combined = (g_current_input_stage_mask << 8) |
-                        (g_current_midrange_mask << 4) |
-                         g_current_backgear_mask;
+    start_gear_shift = false;
 
-    /* special case: ignore all other bits for neutral */
-    if (g_current_backgear_mask ==
-            mh400e_gears[MH400E_NEUTRAL_GEAR_INDEX].value) {
-        return &(mh400e_gears[MH400E_NEUTRAL_GEAR_INDEX]);
-    }
+    twitch_cw = false;
+    twitch_ccw = false;
 
-    tree_node_t *result = tree_search(g_tree_mask, combined);
-    if (result != NULL)
-    {
-        return &(mh400e_gears[result->value]);
-    }
-    return NULL;
+    /* reset state machine avoiding delays */
+    gearshift_stop(0);
 }
 
 /* main component function */
 FUNCTION(_)
 {
+    if (estop_in)
+    {
+        handle_external_e_stop(__comp_inst, period);
+        rtapi_print_msg(RTAPI_MSG_ERR, "mh400e_gearbox: E-STOP detected!\n");
+        return;
+    }
+
     /* perform one time setup */
     if (!g_setup_done)
     {
@@ -260,33 +175,68 @@ FUNCTION(_)
     /* read and update global mask variables for each pin group */
     update_current_pingroup_masks();
 
-    /* determine and update current spindle speed information */
-    pair_t *speed = get_current_gear();
-    if (speed != NULL)
+    /* Gear shift is in progress */
+    if (!start_gear_shift)
     {
-        spindle_speed_out = (float)speed->key;
-    }
-
-    twitch_handle(period);
-
-    if (g_last_spindle_speed != spindle_speed_in_abs)
-    {
-        /* NEXT: this will be the actual fun part - controlling the gear
-         * shifts */
-    }
-
-    if (g_last_spindle_stopped != spindle_stopped)
-    {
-        /* TODO: remove... for now this test code triggers twitching */
-        if (spindle_stopped)
+        /* determine and update current spindle speed information */
+        pair_t *speed = get_current_gear(g_tree_mask);
+        if (speed != NULL)
         {
-            twitch_start(period);
-        }
-        else
-        {
-            twitch_stop(period);
+            spindle_speed_out = (float)speed->key;
         }
 
-        g_last_spindle_stopped = spindle_stopped;
+        if (g_last_spindle_speed == spindle_speed_in_abs)
+        {
+            /* Nothing to do */
+            spindle_at_speed = !spindle_stopped;
+            return;
+        }
+
+
+        /* We don't attempt to do anything if the spindle is running. */
+        if (!spindle_stopped)
+        {
+            stop_spindle = true;
+            return;
+        }
+
+        /* We need to quantize the requested speed to see if our current
+         * gear already matches it */
+        pair_t *new_gear = select_gear_from_rpm(g_tree_rpm,
+                                                spindle_speed_in_abs);
+        /* Current speed already matches the requested speed, nothing to do */
+        if (new_gear->key == spindle_speed_out)
+        {
+            return;
+        }
+
+        /* We need to change to another gear */
+        g_last_spindle_speed = spindle_speed_in_abs;
+
+        spindle_at_speed = false;
+
+        /* This call will set the start_gear_shift pin! */
+        gearshift_start(new_gear, period);
+
+        /* Do the rest in the next cycle */
+        return;
     }
+
+    /* Being here means that a gear shift is in progress */
+    if (!spindle_stopped)
+    {
+        /* This is an invalid condition, spindle must be stopped if we are
+         * shifting and we tested for it before we started.
+         *
+         * TODO: specify what to do (i.e. disable shaft motors, reset state
+         * machine, etc.) */
+        rtapi_print_msg(RTAPI_MSG_ERR, "ERROR: spindle runs while shifting\n");
+        estop_out = true;
+        return;
+    }
+
+    /* Do the gear shifting */
+    gearshift_handle(period);
+
+    /* TODO: restart spindle after gear shifting if it was stopped by us */
 }

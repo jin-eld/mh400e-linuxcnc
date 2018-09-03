@@ -26,6 +26,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 static struct
 {
     bool want_cw;   /* next direction we want to twitch to */
+    bool finished;  /* set by twitch_stop to signal when operation has
+                       completed (twitch_stop is meant to be called repeatedly
+                       in order to stop twitching while still respecting the
+                       configured delays. twitch_start() */
     long delay;     /* delay in ns to do "nothing", counted down to 0 */
     hal_bit_t *cw;  /* pointer to twitch_cw pin */
     hal_bit_t *ccw; /* pointer to twitch_ccw pin */
@@ -42,12 +46,14 @@ FUNCTION(twitch_setup)
     g_twitch_data.cw = &twitch_cw;
     g_twitch_data.ccw = &twitch_ccw;
     g_twitch_data.next = twitch_stop;
+    g_twitch_data.finished = true;
 }
 
 /* Call this function to stop twitching.
  *
  * Stops twitching, respecting the specified delay, always sets the
- * next function pointer to twitch_stop() */
+ * next function pointer to twitch_stop(). Returns "true" if stopping
+ * is done (i.e. all delays have elapsed and both pins are off). */
 static void twitch_stop(long period)
 {
     /* Both are off - nothing to do */
@@ -55,7 +61,7 @@ static void twitch_stop(long period)
     {
         g_twitch_data.delay = 0;
         g_twitch_data.next = twitch_stop;
-        return;
+        g_twitch_data.finished = true;
     }
 
     /* At least one of the pins is on, respect the delay */
@@ -63,13 +69,13 @@ static void twitch_stop(long period)
     {
         g_twitch_data.delay = g_twitch_data.delay - period;
         g_twitch_data.next = twitch_stop;
-        return;
     }
 
     *g_twitch_data.cw = false;
     *g_twitch_data.ccw = false;
     g_twitch_data.next = twitch_stop;
     g_twitch_data.delay = 0;
+    g_twitch_data.finished = true;
 }
 
 /* Do not call this function directly, it will be setup by twitch_start().
@@ -146,6 +152,7 @@ static void twitch_start(long period)
 
     /* Precondition is met, we can do the actual twitching now. */
     g_twitch_data.next = twitch_do;
+    g_twitch_data.finished = false;
 }
 
 /* Wrapper to "hide" the global twitch_data structure */
@@ -155,8 +162,15 @@ static void twitch_handle(long period)
     {
         rtapi_print_msg(RTAPI_MSG_ERR, "mh400e_gearbox FATAL ERROR: twitch "
                         "function not set up, triggering E-Stop!\n");
+        /* TODO: trigger E-STOP */
         return;
 
     }
     g_twitch_data.next(period);
+}
+
+/* Returns true if stop twitching operation completed. */
+static bool twitch_stop_completed()
+{
+    return g_twitch_data.finished;
 }

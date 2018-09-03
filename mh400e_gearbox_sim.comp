@@ -22,10 +22,11 @@ component mh400e_gearbox_sim "Component allowing to partially simulate the MAHO 
 author "Sergey 'Jin' Bostandzhyan";
 license "GPL";
 
-pin in float sim_speed_request_in = 0   "User input to select the gearbox speed for the simulation, will be quantized to nearest supported value";
-pin out float sim_gearbox_speed_out = 0 "Current simulated speed reported by the component in revolutions per second";
+pin in float sim_speed_request_in = 0 "Speed set by the user in the sim UI";
+pin out float spindle-speed-out-abs = 0 "Speed passed to the gearbox comp when apply pin is set";
+pin in bit sim_apply_speed = 0      "Linked to UI button to apply the speed from the slider (prevents speed requests while moving the slider";
+
 pin in bit sim_spindle_stopped = 0      "User input to set spindle_stopped pin from the UI";
-pin in bit sim_all_motion_stopped = 0   "User input to to set spindle_and_motion_stopped pin from the UI";
 
 /* gearbox status pins from the MESA 7i84 */
 pin out bit reducer_left            "MESA 7i84 INPUT  0: 28X2-11";
@@ -45,15 +46,14 @@ pin out bit input_left_center       "MESA 7i84 INPUT 11: 28X2-22";
 
 /* TODO: comment on proper mapping */
 pin out bit spindle_stopped = false "IPC1-23: Information if spindle is stopped.";
-pin out bit all_motion_stopped = false "IPC1-24: Information if spindle and motion/feed is stopped.";
 
 /* control pins, currently not supported by the simulator */
 pin in bit motor_lowspeed           "MESA 7i84 OUTPUT 0: 28X1-8";
 pin in bit reducer_motor            "MESA 7i84 OUTPUT 1: 28X1-9";
 pin in bit midrange_motor           "MESA 7i84 OUTPUT 2: 28X1-10";
-pin in bit input_motor              "MESA 7i84 OUTPUT 3: 28X1-11";
+pin in bit input_stage_motor        "MESA 7i84 OUTPUT 3: 28X1-11";
 pin in bit reverse_direction        "MESA 7i84 OUTPUT 4: 28X1-12";
-pin in bit start_shift              "MESA 7i84 OUTPUT 5: 28X1-13";
+pin in bit start_gear_shift         "MESA 7i84 OUTPUT 5: 28X1-13";
 pin in bit twitch_cw                "MESA 7i84 OUTPUT 6: 28X1-14";
 pin in bit twitch_ccw               "MESA 7i84 OUTPUT 7: 28X1-15";
 
@@ -74,9 +74,20 @@ static pin_group_t g_backgear;
 static pin_group_t g_midrange;
 static pin_group_t g_input_stage;
 
-static tree_node_t *g_tree_rpm = NULL;
-
 static bool g_setup_done = false;
+
+#define SHAFT_POSITIONS 3
+/* red: 1001, blue: 0100, yellow: 0010 */
+static unsigned char g_shaft_positions[SHAFT_POSITIONS] = { 9, 4, 2 };
+
+/* start in neutral position */
+static int g_input_stage_index = 0;
+static int g_midrange_index = 0;
+static int g_backgear_index = 1;
+
+#define SIMULATED_MOTOR_SPEED_NORMAL    500*1000000
+#define SIMULATED_MOTOR_SPEED_SLOW      1000*1000000
+long g_delay = SIMULATED_MOTOR_SPEED_NORMAL;
 
 /* one time setup, called from the main function to initialize whatever we
  * need */
@@ -107,43 +118,7 @@ FUNCTION(setup)
         &input_center,
         &input_left_center
     };
-
-   /* build up binary tree from the gears array to search for rpm */
-    pair_t by_rpm[MH400E_NUM_GEARS];
-    for (int i = 0; i < MH400E_NUM_GEARS; i++)
-    {
-        by_rpm[i].key = mh400e_gears[i].key;
-        by_rpm[i].value = i;
-    }
-
-    g_tree_rpm = tree_from_sorted_array(by_rpm, MH400E_NUM_GEARS);
 }
-
-static pair_t *select_gear_from_rpm(float rpm)
-{
-    /* handle two cases that do not need extra searching */
-    if (rpm <= 0)
-    {
-        return &(mh400e_gears[MH400E_NEUTRAL_GEAR_INDEX]);
-    }
-    else if (rpm >= MH400E_MAX_RPM)
-    {
-        return &(mh400e_gears[MH400E_MAX_GEAR_INDEX]);
-    }
-    else if ((rpm > 0) && (rpm <= mh400e_gears[MH400E_MIN_RPM_INDEX].key))
-    {
-        /* special case: everything >0 but lower than the lowest gear
-         * should still return the lowest gear, because >0 means we want
-         * the spindle to rotate */
-        return &(mh400e_gears[1]);
-    }
-
-    tree_node_t *result = tree_search_closest_match(g_tree_rpm,
-                                                   (unsigned)round(rpm));
-
-    return &(mh400e_gears[result->value]);
-}
-
 
 static void set_pingroup(pin_group_t *group, unsigned char pins)
 {
@@ -153,11 +128,55 @@ static void set_pingroup(pin_group_t *group, unsigned char pins)
     }
 }
 
-static void apply_gear_status_pins(pair_t *gear)
+/* Set gearbox status pins according to our simulated shaft positions */
+static void update_gear_status_pins()
 {
-    set_pingroup(&g_backgear, (gear->value) & 0x000f);
-    set_pingroup(&g_midrange, (gear->value & 0x00f0) >> 4);
-    set_pingroup(&g_input_stage, (gear->value & 0x0f00) >> 8);
+    set_pingroup(&g_backgear, g_shaft_positions[g_backgear_index]);
+    set_pingroup(&g_midrange, g_shaft_positions[g_midrange_index]);
+    set_pingroup(&g_input_stage, g_shaft_positions[g_input_stage_index]);
+}
+
+/* Simulate motor functionality (pins will change depending on motor position),
+ * including some delays that are requred to move from one pin combination to 
+ * another.
+ * TODO: get some realistic values for the delays by checking on the MAHO */
+static long update_index(int index, long period, bool slow, bool reverse)
+{
+    if (g_delay <= 0)
+    {
+        if (slow)
+        {
+            g_delay = SIMULATED_MOTOR_SPEED_SLOW;
+        }
+        else
+        {
+            g_delay = SIMULATED_MOTOR_SPEED_NORMAL;
+        }
+    }
+    else
+    {
+        g_delay = g_delay - period;
+        return index;
+    }
+
+    if (reverse)
+    {
+        index--;
+        if (index < 0)
+        {
+            index = 0;
+        }
+    }
+    else
+    {
+        index++;
+        if (index >= SHAFT_POSITIONS)
+        {
+            index = SHAFT_POSITIONS - 1;
+        }
+    }
+
+    return index;
 }
 
 FUNCTION(_)
@@ -168,14 +187,28 @@ FUNCTION(_)
         g_setup_done = true;
     }
 
-    spindle_stopped = sim_spindle_stopped;
-    all_motion_stopped = sim_all_motion_stopped;
-
-    if (g_last_spindle_speed != sim_speed_request_in)
+    if (sim_apply_speed && (spindle_speed_out_abs != sim_speed_request_in))
     {
-        g_last_spindle_speed = sim_speed_request_in;
-        pair_t *new_gear = select_gear_from_rpm(sim_speed_request_in);
-        apply_gear_status_pins(new_gear);
-        sim_gearbox_speed_out = new_gear->key;
+        spindle_speed_out_abs = sim_speed_request_in;
     }
+
+    spindle_stopped = sim_spindle_stopped;
+
+    if (reducer_motor)
+    {
+        g_backgear_index = update_index(g_backgear_index, period,
+                                        motor_lowspeed, reverse_direction);
+    }
+    if (input_stage_motor)
+    {
+        g_input_stage_index = update_index(g_input_stage_index, period,
+                                           motor_lowspeed, reverse_direction);
+    }
+    if (midrange_motor)
+    {
+        g_midrange_index = update_index(g_midrange_index, period,
+                                        motor_lowspeed, reverse_direction);
+    }
+
+    update_gear_status_pins();
 }

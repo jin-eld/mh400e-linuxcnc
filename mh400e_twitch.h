@@ -42,9 +42,11 @@ static void twitch_handle(long period);
 /* Call this function to stop twitching.
  *
  * Stops twitching, respecting the specified delay, always sets the
- * next function pointer to twitch_stop() */
+ * next function pointer to twitch_stop(). */
 static void twitch_stop(long period);
 
+/* Returns true if stop twitching operation completed. */
+static bool twitch_stop_completed();
 
 /* really ugly way of keeping more order and splitting the sources,
  * halcompile does not allow to link multipe source files together, so

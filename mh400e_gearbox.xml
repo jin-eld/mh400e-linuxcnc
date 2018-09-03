@@ -13,10 +13,10 @@
               <relief>RIDGE</relief>
               <bd>3</bd>
               <label>
-                <text>"Initial gearbox speed"</text>
+                <text>"Select target speed"</text>
               </label>
               <scale>
-                <halpin>"sim-speed-request-in"</halpin>
+                <halpin>"sim-speed-request-out"</halpin>
                 <resolution>10</resolution>
                 <orient>HORIZONTAL</orient>
                 <initval>0</initval>
@@ -28,13 +28,10 @@
             <vbox>
               <relief>RIDGE</relief>
               <bd>3</bd>
-              <label>
-               <text>"Supported speed"</text>
-              </label>
-              <bar>
-                <halpin>"sim-gearbox-speed-out"</halpin>
-                <max_>4000</max_>
-              </bar>
+              <button>
+                <halpin>"sim-apply-speed"</halpin>
+               <text>"Request gearchange"</text>
+              </button>
             </vbox>
           </vbox>
         </labelframe>
@@ -116,16 +113,20 @@
               <font>("courier 10 pitch",10)</font>
               <text>"CCW"</text>
             </label>
-            <checkbutton>
-              <halpin>"sim-spindle-stopped"</halpin>
+            <rectled height="20" width="20">
+              <halpin>"spindle-stopped-in"</halpin>
+            </rectled>
+            <label>
+              <font>("courier 10 pitch",10)</font>
               <text>"Spindle stopped"</text>
-              <initval>0</initval>
-            </checkbutton>
-            <checkbutton>
-              <halpin>"sim-all-motion-stopped"</halpin>
-              <text>"Spindle and motion stopped"</text>
-              <initval>0</initval>
-            </checkbutton>
+            </label>
+            <rectled height="20" width="20">
+              <halpin>"spindle-at-speed-in"</halpin>
+            </rectled>
+            <label>
+              <font>("courier 10 pitch",10)</font>
+              <text>"Spindle at speed"</text>
+            </label>
           </hbox>
         </labelframe>
         <labelframe text="Gearbox Status Pins">
@@ -271,21 +272,9 @@
             <relief>FLAT</relief>
             <bd>5</bd>
             <vbox>
+            </vbox>
               <relief>RIDGE</relief>
               <bd>3</bd>
-              <label>
-                <text>"Desired spindle speed"</text>
-              </label>
-              <scale>
-                <halpin>"spindle-speed-in-abs"</halpin>
-                <resolution>10</resolution>
-                <orient>HORIZONTAL</orient>
-                <initval>0</initval>
-                <min_>0</min_>
-                <max_>4000</max_>
-                <param_pin>1</param_pin>
-              </scale>
-            </vbox>
             <vbox>
               <relief>RIDGE</relief>
               <bd>3</bd>
@@ -297,30 +286,6 @@
                 <max_>4000</max_>
               </bar>
             </vbox>
-          </vbox>
-        </labelframe>
-        <labelframe text="Spindle motion pins">
-          <vbox>
-            <relief>FLAT</relief>
-            <bd>5</bd>
-            <hbox>
-              <led>
-                <halpin>"spindle-stopped"</halpin>
-              </led>
-              <label>
-                <font>("courier 10 pitch",10)</font>
-                <text>"Spindle stopped status pin"</text>
-              </label>
-            </hbox>
-            <hbox>
-              <led>
-                <halpin>"all-motion-stopped"</halpin>
-              </led>
-              <label>
-                <font>("courier 10 pitch",10)</font>
-                <text>"Spindle and motion stopped status pin"</text>
-              </label>
-            </hbox>
           </vbox>
         </labelframe>
       </vbox>

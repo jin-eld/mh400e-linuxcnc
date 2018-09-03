@@ -4,8 +4,6 @@ loadrt mh400e_gearbox
 loadusr -Wn mh400e_sim_gui pyvcp -c mh400e_sim_gui mh400e_gearbox.xml
 
 # connect simulator and the UI
-net gui-get-spindle-speed mh400e-gearbox-sim.sim-gearbox-speed-out => mh400e_sim_gui.sim-gearbox-speed-out
-net gui-set-spindle-speed mh400e-gearbox-sim.sim-speed-request-in <= mh400e_sim_gui.sim-speed-request-in-f
 net set-reducer-left mh400e-gearbox-sim.reducer-left => mh400e_sim_gui.reducer-left mh400e-gearbox.reducer-left
 net gui-set-reducer-right mh400e-gearbox-sim.reducer-right => mh400e_sim_gui.reducer-right mh400e-gearbox.reducer-right
 net gui-set-reducer-center mh400e-gearbox-sim.reducer-center => mh400e_sim_gui.reducer-center mh400e-gearbox.reducer-center
@@ -20,22 +18,25 @@ net gui-set-input-center mh400e-gearbox-sim.input-center => mh400e_sim_gui.input
 net gui-set-input-left-center mh400e-gearbox-sim.input-left-center => mh400e_sim_gui.input-left-center mh400e-gearbox.input-left-center
 
 # connect UI and the real component
-net set-spindle-speed-in-abs mh400e-gearbox.spindle-speed-in-abs <= mh400e_sim_gui.spindle-speed-in-abs-f
 net get-spindle-speed-out mh400e-gearbox.spindle-speed-out => mh400e_sim_gui.spindle-speed-out
-net gui-set-spindle-stopped mh400e_sim_gui.sim-spindle-stopped => mh400e-gearbox-sim.sim-spindle-stopped
-net read-spindle-stopped-pin mh400e-gearbox.spindle-stopped mh400e_sim_gui.spindle-stopped <= mh400e-gearbox-sim.spindle-stopped
-
-net gui-set-all-motion-stopped mh400e_sim_gui.sim-all-motion-stopped => mh400e-gearbox-sim.sim-all-motion-stopped
-net read-all-motion-pin mh400e-gearbox.all-motion-stopped mh400e_sim_gui.all-motion-stopped <= mh400e-gearbox-sim.all-motion-stopped
-
-net set-gear-shift-start mh400e-gearbox.start-gear-shift => mh400e_sim_gui.start-gear-shift
-net set-reverse-shaft-motor mh400e-gearbox.reverse-direction => mh400e_sim_gui.reverse-motor-direction
-net activate-reducer-motor mh400e-gearbox.reducer-motor => mh400e_sim_gui.reducer-motor
-net activate-midrange-motor mh400e-gearbox.midrange-motor => mh400e_sim_gui.midrange-motor
-net set-shaft-motor-lowspeed mh400e-gearbox.motor-lowspeed => mh400e_sim_gui.motor-lowspeed
-net activate-input-stage-motor mh400e-gearbox.input-stage-motor => mh400e_sim_gui.input-stage-motor
+net select-target-speed mh400e_sim_gui.sim-speed-request-out-f => mh400e-gearbox-sim.sim-speed-request-in
+net link-target-speed mh400e-gearbox-sim.spindle-speed-out-abs => mh400e-gearbox.spindle-speed-in-abs
+net apply-target-speed mh400e_sim_gui.sim-apply-speed => mh400e-gearbox-sim.sim-apply-speed
+net set-gear-shift-start mh400e-gearbox.start-gear-shift => mh400e_sim_gui.start-gear-shift mh400e-gearbox-sim.start-gear-shift
+net set-reverse-shaft-motor mh400e-gearbox.reverse-direction => mh400e_sim_gui.reverse-motor-direction mh400e-gearbox-sim.reverse-direction
+net activate-reducer-motor mh400e-gearbox.reducer-motor => mh400e_sim_gui.reducer-motor mh400e-gearbox-sim.reducer-motor
+net activate-midrange-motor mh400e-gearbox.midrange-motor => mh400e_sim_gui.midrange-motor mh400e-gearbox-sim.midrange-motor
+net set-shaft-motor-lowspeed mh400e-gearbox.motor-lowspeed => mh400e_sim_gui.motor-lowspeed mh400e-gearbox-sim.motor-lowspeed
+net activate-input-stage-motor mh400e-gearbox.input-stage-motor => mh400e_sim_gui.input-stage-motor mh400e-gearbox-sim.input-stage-motor
 net activate-spindle-twitch-cw mh400e-gearbox.twitch-cw => mh400e_sim_gui.spindle-twitch-cw-in
 net activate-spindle-twitch-ccw mh400e-gearbox.twitch-ccw => mh400e_sim_gui.spindle-twitch-ccw-in
+
+net display-spindle-at-speed mh400e-gearbox.spindle-at-speed => mh400e_sim_gui.spindle-at-speed-in
+
+# temporary hack, we're supposed to stop the spindle but get the confirmation
+# back from the machine instead of looping it in via hal
+net connect-spindle-control mh400e-gearbox.stop-spindle => mh400e-gearbox.spindle-stopped mh400e_sim_gui.spindle-stopped-in
+
 # running the thread extra slowly to simplify debugging console output
 loadrt threads name1=mh400e-sim-thread period1=1000000
 addf mh400e-gearbox-sim mh400e-sim-thread
