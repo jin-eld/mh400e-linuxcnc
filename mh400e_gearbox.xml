@@ -34,6 +34,13 @@
               </button>
             </vbox>
           </vbox>
+          <vbox>
+            <checkbutton>
+              <halpin>"sim-stop-spindle"</halpin>
+              <text>"Stop spindle"</text>
+              <initval>0</initval>
+            </checkbutton>
+          </vbox>
         </labelframe>
         <labelframe text="Gearbox Control Pins">
           <vbox>

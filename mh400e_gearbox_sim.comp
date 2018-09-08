@@ -26,7 +26,8 @@ pin in float sim_speed_request_in = 0 "Speed set by the user in the sim UI";
 pin out float spindle-speed-out-abs = 0 "Speed passed to the gearbox comp when apply pin is set";
 pin in bit sim_apply_speed = 0      "Linked to UI button to apply the speed from the slider (prevents speed requests while moving the slider";
 
-pin in bit sim_spindle_stopped = 0      "User input to set spindle_stopped pin from the UI";
+pin in bit sim_stop_spindle_gui = 0 "User input to set spindle_stopped pin from the UI";
+pin in bit sim_stop_spindle_comp = 0 "Input to set spindle_stopped pin from the component, has higher priority than the one from the UI";
 
 /* gearbox status pins from the MESA 7i84 */
 pin out bit reducer_left            "MESA 7i84 INPUT  0: 28X2-11";
@@ -192,7 +193,17 @@ FUNCTION(_)
         spindle_speed_out_abs = sim_speed_request_in;
     }
 
-    spindle_stopped = sim_spindle_stopped;
+    /* Comp always has the priority to override the user setting if it needs
+     * to stop the spindle, in all other cases use the setting made
+     * by the user. */
+    if (sim_stop_spindle_comp == true)
+    {
+        spindle_stopped = true;
+    }
+    else
+    {
+        spindle_stopped = sim_stop_spindle_gui;
+    }
 
     if (reducer_motor)
     {
