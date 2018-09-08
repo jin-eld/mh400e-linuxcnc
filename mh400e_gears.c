@@ -45,6 +45,9 @@ typedef struct
 static struct
 {
     hal_bit_t *start_shift;
+    hal_bit_t *do_stop_spindle;
+    hal_bit_t *is_spindle_stopped;
+    bool spindle_on_before_shift;
     shaft_data_t backgear;
     shaft_data_t midrange;
     shaft_data_t input_stage;
@@ -149,9 +152,22 @@ FUNCTION(gearbox_setup)
     g_gearbox_data.input_stage.current_mask = 0;
     g_gearbox_data.input_stage.target_mask = 0; /* don't care for neutral */
 
+    #pragma push_macro("spindle_stopped")
+    #undef spindle_stopped
+    g_gearbox_data.is_spindle_stopped = __comp_inst->spindle_stopped;
+    #pragma pop_macro("spindle_stopped")
+    g_gearbox_data.do_stop_spindle = &stop_spindle;
+    g_gearbox_data.spindle_on_before_shift = false;
     g_gearbox_data.start_shift = &start_gear_shift;
     g_gearbox_data.delay = 0;
     g_gearbox_data.next = NULL;
+}
+
+static void gearshift_stop_spindle()
+{
+    g_gearbox_data.spindle_on_before_shift =
+        !(*g_gearbox_data.is_spindle_stopped);
+    *g_gearbox_data.do_stop_spindle = true;
 }
 
 /* combine values of all pins in a group to a bitmask */
@@ -368,6 +384,12 @@ static void gearshift_stop(long period)
      * check all relevant pins and deactivate them */
     g_gearbox_data.next = NULL;
     *g_gearbox_data.start_shift = false;
+
+    if (g_gearbox_data.spindle_on_before_shift)
+    {
+        *g_gearbox_data.do_stop_spindle = false;
+    }
+    g_gearbox_data.spindle_on_before_shift = false;
 }
 
 static void gearshift_backgear(long period)

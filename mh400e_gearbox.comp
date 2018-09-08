@@ -89,6 +89,8 @@ static tree_node_t *g_tree_mask = NULL;
 
 static bool g_setup_done = false;
 
+static bool g_spindle_on_before_shift = false;
+
 /* one time setup, called from the main function to initialize whatever we
  * need */
 FUNCTION(setup)
@@ -194,9 +196,12 @@ FUNCTION(_)
 
 
         /* We don't attempt to do anything if the spindle is running. */
+        /* TODO: check that spindle_stopped triggers only when the spindle
+         * has come to a full stop and not just a that time it has been
+         * powered off (might still be moving due to inertia) */
         if (!spindle_stopped)
         {
-            stop_spindle = true;
+            gearshift_stop_spindle();
             return;
         }
 

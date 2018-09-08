@@ -29,6 +29,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  * switching*/
 FUNCTION(gearbox_setup);
 
+/* Remembers the spindle state and sets the stop_spindle pin */
+static void gearbox_stop_spindle();
+
 /* Construct masks from current gearbox status pins, call this function
  * once per iteration */
 static void update_current_pingroup_masks();
