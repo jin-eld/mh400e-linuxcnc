@@ -380,8 +380,6 @@ static void gearshift_stop(long period)
         return;
     }
 
-    /* TODO: if this function was called in the middle of a shift (E-STOP?)
-     * check all relevant pins and deactivate them */
     g_gearbox_data.next = NULL;
     *g_gearbox_data.start_shift = false;
 
