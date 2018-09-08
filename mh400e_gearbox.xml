@@ -279,10 +279,6 @@
             <relief>FLAT</relief>
             <bd>5</bd>
             <vbox>
-            </vbox>
-              <relief>RIDGE</relief>
-              <bd>3</bd>
-            <vbox>
               <relief>RIDGE</relief>
               <bd>3</bd>
               <label>
