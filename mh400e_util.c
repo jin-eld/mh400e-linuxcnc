@@ -200,7 +200,7 @@ static tree_node_t *tree_search_closest_match(tree_node_t *root, unsigned key)
         return root;
     }
 
-    if (root->key < key)
+    if (root->key <= key)
     {
         return tree_search_closest_match(root->right, key);
     }
