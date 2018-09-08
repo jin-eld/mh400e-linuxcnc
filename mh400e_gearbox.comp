@@ -194,6 +194,16 @@ FUNCTION(_)
             return;
         }
 
+        /* We need to quantize the requested speed to see if our current
+         * gear already matches it */
+        pair_t *new_gear = select_gear_from_rpm(g_tree_rpm,
+                                                spindle_speed_in_abs);
+        /* Current speed already matches the requested speed, nothing to do */
+        if (new_gear->key == spindle_speed_out)
+        {
+            spindle_at_speed = !spindle_stopped;
+            return;
+        }
 
         /* We don't attempt to do anything if the spindle is running. */
         /* TODO: check that spindle_stopped triggers only when the spindle
@@ -202,16 +212,6 @@ FUNCTION(_)
         if (!spindle_stopped)
         {
             gearshift_stop_spindle();
-            return;
-        }
-
-        /* We need to quantize the requested speed to see if our current
-         * gear already matches it */
-        pair_t *new_gear = select_gear_from_rpm(g_tree_rpm,
-                                                spindle_speed_in_abs);
-        /* Current speed already matches the requested speed, nothing to do */
-        if (new_gear->key == spindle_speed_out)
-        {
             return;
         }
 
