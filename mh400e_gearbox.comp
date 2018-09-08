@@ -242,6 +242,4 @@ FUNCTION(_)
 
     /* Do the gear shifting */
     gearshift_handle(period);
-
-    /* TODO: restart spindle after gear shifting if it was stopped by us */
 }
