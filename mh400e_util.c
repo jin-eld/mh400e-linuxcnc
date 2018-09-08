@@ -229,7 +229,7 @@ static void swap_elements(pair_t *p1, pair_t *p2)
 }
 
 /* Simple bubble sort to get our gear arrays in order. */
-void sort_array_by_key(pair_t array[], size_t length)
+static void sort_array_by_key(pair_t array[], size_t length)
 {
     int i, j;
     for (i = 0; i < length - 1; i++)
