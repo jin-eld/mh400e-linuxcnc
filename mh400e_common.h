@@ -88,8 +88,10 @@ static pair_t mh400e_gears[] =
 #define MH400E_TWITCH_KEEP_PIN_ON   800*1000000 /* 800ms in nanoseconds */
 #define MH400E_TWITCH_KEEP_PIN_OFF  200*1000000 /* 200ms in nanoseconds */
 
-/* This value needs to be tuned, for now randomly picking 100ms */
-#define MH400E_GEAR_STAGE_POLL_INTERVAL 100*1000000 /* 100ms in nanoseconds */
+/* When shifting, poll the stage pins each 5ms. Picking a lower value here
+ * to make sure that we do not "miss" and do not overshoot our target
+ * position. */
+#define MH400E_GEAR_STAGE_POLL_INTERVAL 5*1000000 /* 5ms in nanoseconds */
 
 /* If reverse direction needs to be activated, we have to wait 100ms before
  * we activate the motor after the reverse pin has been activated or
