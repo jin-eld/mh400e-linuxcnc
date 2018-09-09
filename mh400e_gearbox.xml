@@ -53,6 +53,13 @@
             </hbox>
             <hbox/>
           </vbox>
+          <vbox>
+            <button>
+              <halpin>"sim-trigger-estop"</halpin>
+              <text>"Trigger Emergency-Stop"</text>
+              <fg>"red"</fg>
+            </button>
+          </vbox>
         </labelframe>
         <labelframe text="Gearbox Control Pins">
           <vbox>
