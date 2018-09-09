@@ -233,8 +233,8 @@ FUNCTION(_)
         /* This is an invalid condition, spindle must be stopped if we are
          * shifting and we tested for it before we started.
          *
-         * TODO: specify what to do (i.e. disable shaft motors, reset state
-         * machine, etc.) */
+         * We expect that estop_out will be looped back to us so that
+         * it will trigger our handler. */
         rtapi_print_msg(RTAPI_MSG_ERR, "ERROR: spindle runs while shifting\n");
         estop_out = true;
         return;
