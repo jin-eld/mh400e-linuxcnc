@@ -85,24 +85,24 @@ static pair_t mh400e_gears[] =
 /* max spindle rpm supported by the MH400E */
 #define MH400E_MAX_RPM              4000
 
-#define MH400E_TWITCH_KEEP_PIN_ON   800*1000000 /* 800ms in nanoseconds */
-#define MH400E_TWITCH_KEEP_PIN_OFF  200*1000000 /* 200ms in nanoseconds */
+#define MH400E_TWITCH_KEEP_PIN_ON   800*1000000L /* 800ms in nanoseconds */
+#define MH400E_TWITCH_KEEP_PIN_OFF  200*1000000L /* 200ms in nanoseconds */
 
 /* When shifting, poll the stage pins each 5ms. Picking a lower value here
  * to make sure that we do not "miss" and do not overshoot our target
  * position. */
-#define MH400E_GEAR_STAGE_POLL_INTERVAL 5*1000000 /* 5ms in nanoseconds */
+#define MH400E_GEAR_STAGE_POLL_INTERVAL 5*1000000L /* 5ms in nanoseconds */
 
 /* If reverse direction needs to be activated, we have to wait 100ms before
  * we activate the motor after the reverse pin has been activated or
  * deactivated */
-#define MH400E_REVERSE_MOTOR_INTERVAL   100*1000000 /* 100ms in nanoseconds */
+#define MH400E_REVERSE_MOTOR_INTERVAL   100*1000000L /* 100ms in nanoseconds */
 
 /* Interval between all remaining pin operations related to gear shifting */
-#define MH400E_GENERIC_PIN_INTERVAL     100*1000000 /* 100ms in nanoseconds */
+#define MH400E_GENERIC_PIN_INTERVAL     100*1000000L /* 100ms in nanoseconds */
 
 /* TODO: make this a module parameter */
-#define MH400E_WAIT_SPINDLE_AT_SPEED    500*1000000 /* 500ms in nanoseconds */
+#define MH400E_WAIT_SPINDLE_AT_SPEED    500*1000000L /* 500ms in nanoseconds */
 /* generic state function */
 typedef void (*statefunc)(long period);
 
