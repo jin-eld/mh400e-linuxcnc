@@ -25,6 +25,7 @@ license "GPL";
 pin in float sim_speed_request_in = 0 "Speed set by the user in the sim UI";
 pin out float spindle-speed-out-abs = 0 "Speed passed to the gearbox comp when apply pin is set";
 pin in bit sim_apply_speed = 0      "Linked to UI button to apply the speed from the slider (prevents speed requests while moving the slider";
+pin in bit sim_slow_motion = 1     "Set this pin to significantly slow down the simulated motor speed in order to be able to follow the changes in the sim UI";
 
 pin in bit sim_stop_spindle_gui = 0 "User input to set spindle_stopped pin from the UI";
 pin in bit sim_stop_spindle_comp = 0 "Input to set spindle_stopped pin from the component, has higher priority than the one from the UI";
@@ -86,9 +87,13 @@ static int g_input_stage_index = 0;
 static int g_midrange_index = 0;
 static int g_backgear_index = 1;
 
-#define SIMULATED_MOTOR_SPEED_NORMAL    500*1000000
-#define SIMULATED_MOTOR_SPEED_SLOW      1000*1000000
-long g_delay = SIMULATED_MOTOR_SPEED_NORMAL;
+#define SIMULATED_MOTOR_SPEED_NORMAL        500*1000000
+#define SIMULATED_MOTOR_SPEED_SLOW          1000*1000000
+#define SIMULATED_NORMAL_FACTOR             1L
+#define SIMULATED_SLOW_MOTION_FACTOR        5L
+
+static long g_delay = SIMULATED_MOTOR_SPEED_NORMAL;
+static bool g_slow_motion = true;
 
 /* one time setup, called from the main function to initialize whatever we
  * need */
@@ -137,6 +142,24 @@ static void update_gear_status_pins()
     set_pingroup(&g_input_stage, g_shaft_positions[g_input_stage_index]);
 }
 
+/* Calculate initial delay value based on current settings */
+static long reset_delay(bool slow)
+{
+        if (slow)
+        {
+            return (g_slow_motion == true) ?
+                SIMULATED_MOTOR_SPEED_SLOW * SIMULATED_SLOW_MOTION_FACTOR :
+                SIMULATED_MOTOR_SPEED_SLOW * SIMULATED_NORMAL_FACTOR;
+
+        }
+        else
+        {
+            return (g_slow_motion == true) ?
+                SIMULATED_MOTOR_SPEED_NORMAL * SIMULATED_SLOW_MOTION_FACTOR :
+                SIMULATED_MOTOR_SPEED_NORMAL * SIMULATED_NORMAL_FACTOR;
+        }
+}
+
 /* Simulate motor functionality (pins will change depending on motor position),
  * including some delays that are requred to move from one pin combination to 
  * another.
@@ -145,14 +168,7 @@ static long update_index(int index, long period, bool slow, bool reverse)
 {
     if (g_delay <= 0)
     {
-        if (slow)
-        {
-            g_delay = SIMULATED_MOTOR_SPEED_SLOW;
-        }
-        else
-        {
-            g_delay = SIMULATED_MOTOR_SPEED_NORMAL;
-        }
+        g_delay = reset_delay(slow);
     }
     else
     {
@@ -186,6 +202,12 @@ FUNCTION(_)
     {
         setup(__comp_inst, period);
         g_setup_done = true;
+    }
+
+    if (g_slow_motion != sim_slow_motion)
+    {
+        g_slow_motion = sim_slow_motion;
+        g_delay = reset_delay(motor_lowspeed);
     }
 
     if (sim_apply_speed && (spindle_speed_out_abs != sim_speed_request_in))

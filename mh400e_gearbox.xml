@@ -24,10 +24,9 @@
                 <max_>4000</max_>
                 <param_pin>1</param_pin>
               </scale>
-            </vbox>
-            <vbox>
-              <relief>RIDGE</relief>
-              <bd>3</bd>
+              <vbox>
+                <bd>3</bd>
+              </vbox>
               <button>
                 <halpin>"sim-apply-speed"</halpin>
                <text>"Request gearchange"</text>
@@ -35,11 +34,24 @@
             </vbox>
           </vbox>
           <vbox>
-            <checkbutton>
-              <halpin>"sim-stop-spindle"</halpin>
-              <text>"Stop spindle"</text>
-              <initval>0</initval>
-            </checkbutton>
+            <hbox>
+              <checkbutton>
+                <halpin>"sim-stop-spindle"</halpin>
+                <text>"Stop spindle"</text>
+                <initval>0</initval>
+              </checkbutton>
+            </hbox>
+            <hbox/>
+          </vbox>
+          <vbox>
+            <hbox>
+              <checkbutton>
+                <halpin>"sim-slow-motion-mode"</halpin>
+                <text>"Enable slow motion simulation"</text>
+                <initval>1</initval>
+              </checkbutton>
+            </hbox>
+            <hbox/>
           </vbox>
         </labelframe>
         <labelframe text="Gearbox Control Pins">
