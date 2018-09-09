@@ -100,6 +100,9 @@ static pair_t mh400e_gears[] =
 
 /* Interval between all remaining pin operations related to gear shifting */
 #define MH400E_GENERIC_PIN_INTERVAL     100*1000000 /* 100ms in nanoseconds */
+
+/* TODO: make this a module parameter */
+#define MH400E_WAIT_SPINDLE_AT_SPEED    500*1000000 /* 500ms in nanoseconds */
 /* generic state function */
 typedef void (*statefunc)(long period);
 

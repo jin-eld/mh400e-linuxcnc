@@ -46,7 +46,7 @@ pin in bit input_left_center        "MESA 7i84 INPUT 11: 28X2-22";
 /* spindle status pin */
 pin in bit spindle_stopped     = 0  "MESA 7i84 INPUT 19: TB2-4";
 
-pin out bit stop_spindle       = 0;
+pin out bit stop_spindle       = 0  "Start or stop spindle";
 pin out bit spindle_at_speed   = 0;
 
 /* control pins */
@@ -181,7 +181,7 @@ FUNCTION(_)
     update_current_pingroup_masks();
 
     /* Gear shift is in progress */
-    if (!start_gear_shift)
+    if (!gearshift_in_progress())
     {
         /* determine and update current spindle speed information */
         pair_t *speed = get_current_gear(g_tree_mask);
@@ -227,20 +227,6 @@ FUNCTION(_)
         gearshift_start(new_gear, period);
 
         /* Do the rest in the next cycle */
-        return;
-    }
-
-    /* Being here means that a gear shift is in progress */
-    if (!spindle_stopped)
-    {
-        /* This is an invalid condition, spindle must be stopped if we are
-         * shifting and we tested for it before we started.
-         *
-         * We expect that estop_out will be looped back to us so that
-         * it will trigger our handler. */
-        rtapi_print_msg(RTAPI_MSG_ERR, "mh400e_gearbox FATAL ERROR: detected "
-                "running spindle while shifting, triggering emergency stop!\n");
-        estop_out = true;
         return;
     }
 

@@ -57,6 +57,9 @@ static void gearshift_handle(long period);
 /* Reset pins and state machine if an emergency stop was triggered. */
 static void gearbox_handle_estop();
 
+/* Returns true if a gear shifting operation is currently in progress */
+static bool gearshift_in_progress();
+
 /* really ugly way of keeping more order and splitting the sources,
  * halcompile does not allow to link multipe source files together, so
  * ultimately all sources need to be included by the .comp directly */

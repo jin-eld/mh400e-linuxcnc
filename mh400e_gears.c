@@ -48,6 +48,7 @@ static struct
     hal_bit_t *do_stop_spindle;
     hal_bit_t *is_spindle_stopped;
     hal_bit_t *trigger_estop;
+    hal_bit_t *notify_spindle_at_speed;
     bool spindle_on_before_shift;
     shaft_data_t backgear;
     shaft_data_t midrange;
@@ -161,6 +162,7 @@ FUNCTION(gearbox_setup)
     g_gearbox_data.spindle_on_before_shift = false;
     g_gearbox_data.start_shift = &start_gear_shift;
     g_gearbox_data.trigger_estop = &estop_out;
+    g_gearbox_data.notify_spindle_at_speed = &spindle_at_speed;
     g_gearbox_data.delay = 0;
     g_gearbox_data.next = NULL;
 }
@@ -193,6 +195,24 @@ static void update_current_pingroup_masks()
         get_bitmask_from_pingroup(&g_gearbox_data.midrange.status_pins);
     g_gearbox_data.input_stage.current_mask =
         get_bitmask_from_pingroup(&g_gearbox_data.input_stage.status_pins);
+}
+
+static bool estop_on_spindle_running()
+{
+    if (!*g_gearbox_data.is_spindle_stopped)
+    {
+        /* This is an invalid condition, spindle must be stopped if we are
+         * shifting and we tested for it before we started.
+         *
+         * We expect that estop_out will be looped back to us so that
+         * it will trigger our handler. */
+        rtapi_print_msg(RTAPI_MSG_ERR, "mh400e_gearbox FATAL ERROR: detected "
+                "running spindle while shifting, triggering emergency stop!\n");
+        *g_gearbox_data.trigger_estop = true;
+        return true;
+    }
+
+    return false;
 }
 
 /* Combine masks from each pin group to a value representing the current
@@ -275,6 +295,11 @@ static bool gearshift_need_reverse(unsigned char target_mask,
 static void gearshift_stage(shaft_data_t *shaft, statefunc me, statefunc next,
                             long period)
 {
+    if (estop_on_spindle_running())
+    {
+        return;
+    }
+
     if (gearshift_wait_delay(period))
     {
         g_gearbox_data.next = me;
@@ -382,13 +407,26 @@ static void gearshift_stop(long period)
         return;
     }
 
-    g_gearbox_data.next = NULL;
-    *g_gearbox_data.start_shift = false;
+    if (*g_gearbox_data.start_shift)
+    {
+        *g_gearbox_data.start_shift = false;
+
+        if (g_gearbox_data.spindle_on_before_shift)
+        {
+            *g_gearbox_data.do_stop_spindle = false;
+            g_gearbox_data.delay = MH400E_WAIT_SPINDLE_AT_SPEED;
+            g_gearbox_data.next = gearshift_stop;
+            return;
+        }
+    }
 
     if (g_gearbox_data.spindle_on_before_shift)
     {
-        *g_gearbox_data.do_stop_spindle = false;
+        *g_gearbox_data.notify_spindle_at_speed = true;
     }
+
+    /* We are done shifting, reset everything */
+    g_gearbox_data.next = NULL;
     g_gearbox_data.spindle_on_before_shift = false;
 }
 
@@ -431,6 +469,11 @@ static void gearshift_handle(long period)
 /* Start shifting process */
 static void gearshift_start(pair_t *target_gear, long period)
 {
+    if (estop_on_spindle_running())
+    {
+        return;
+    }
+
     g_gearbox_data.backgear.target_mask = (target_gear->value) & 0x000f;
     g_gearbox_data.midrange.target_mask = (target_gear->value & 0x00f0) >> 4;
     g_gearbox_data.input_stage.target_mask = 
@@ -471,3 +514,7 @@ static void gearbox_handle_estop()
     gearshift_stop(0); /* Will stop and reset twitching as well */
 }
 
+static bool gearshift_in_progress()
+{
+    return g_gearbox_data.next != NULL;
+}
