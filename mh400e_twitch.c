@@ -33,6 +33,7 @@ static struct
     long delay;     /* delay in ns to do "nothing", counted down to 0 */
     hal_bit_t *cw;  /* pointer to twitch_cw pin */
     hal_bit_t *ccw; /* pointer to twitch_ccw pin */
+    hal_bit_t *trigger_estop; /* set to true to trigger an emergency stop */
     statefunc next; /* next twitch state function to call */
 } g_twitch_data;
 
@@ -45,6 +46,7 @@ FUNCTION(twitch_setup)
     g_twitch_data.delay = 0;
     g_twitch_data.cw = &twitch_cw;
     g_twitch_data.ccw = &twitch_ccw;
+    g_twitch_data.trigger_estop = &estop_out;
     g_twitch_data.next = twitch_stop;
     g_twitch_data.finished = true;
 }
@@ -127,9 +129,8 @@ static void twitch_do(long period)
     else /* both are never allowed to be on */
     {
         rtapi_print_msg(RTAPI_MSG_ERR, "mh400e_gearbox FATAL ERROR: twitch "
-                        "cw + ccw are on, triggering E-Stop!\n");
-        /* TODO: trigger e-stop and specify component behavior in
-         * emergency stop condition */
+                        "cw + ccw are on, triggering emergency stop!\n");
+        *g_twitch_data.trigger_estop = true;
     }
 }
 
@@ -161,8 +162,8 @@ static void twitch_handle(long period)
     if (g_twitch_data.next == NULL)
     {
         rtapi_print_msg(RTAPI_MSG_ERR, "mh400e_gearbox FATAL ERROR: twitch "
-                        "function not set up, triggering E-Stop!\n");
-        /* TODO: trigger E-STOP */
+                        "function not set up, triggering emergency stop!\n");
+        *g_twitch_data.trigger_estop = true;
         return;
 
     }

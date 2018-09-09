@@ -47,6 +47,7 @@ static struct
     hal_bit_t *start_shift;
     hal_bit_t *do_stop_spindle;
     hal_bit_t *is_spindle_stopped;
+    hal_bit_t *trigger_estop;
     bool spindle_on_before_shift;
     shaft_data_t backgear;
     shaft_data_t midrange;
@@ -159,6 +160,7 @@ FUNCTION(gearbox_setup)
     g_gearbox_data.do_stop_spindle = &stop_spindle;
     g_gearbox_data.spindle_on_before_shift = false;
     g_gearbox_data.start_shift = &start_gear_shift;
+    g_gearbox_data.trigger_estop = &estop_out;
     g_gearbox_data.delay = 0;
     g_gearbox_data.next = NULL;
 }
@@ -419,7 +421,7 @@ static void gearshift_handle(long period)
     {
         rtapi_print_msg(RTAPI_MSG_ERR, "mh400e_gearbox FATAL ERROR: "
                         "gearshif function not set up, triggering E-Stop!\n");
-        /* TODO: trigger E-STOP */
+        *g_gearbox_data.trigger_estop = true;
         return;
     }
 
@@ -452,5 +454,20 @@ static void gearshift_start(pair_t *target_gear, long period)
     {
         g_gearbox_data.next = gearshift_input_stage;
     }
+}
+
+/* Reset pins and state machine if an emergency stop was triggered. */
+static void gearbox_handle_estop()
+{
+    *g_gearbox_data.input_stage.motor_on = false;
+    *g_gearbox_data.midrange.motor_on = false;
+    *g_gearbox_data.backgear.motor_on = false;
+    /* There are no separate pins for revers/slow for each shaft, each
+     * shaft structure has pointers to the same pins, so its enough to
+     * reset them only on one shaft. */
+    *g_gearbox_data.backgear.motor_reverse = false;
+    *g_gearbox_data.backgear.motor_slow = false;
+
+    gearshift_stop(0); /* Will stop and reset twitching as well */
 }
 

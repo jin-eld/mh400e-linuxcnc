@@ -91,6 +91,8 @@ static bool g_setup_done = false;
 
 static bool g_spindle_on_before_shift = false;
 
+static bool g_last_estop = false;
+
 /* one time setup, called from the main function to initialize whatever we
  * need */
 FUNCTION(setup)
@@ -130,6 +132,8 @@ FUNCTION(setup)
     g_tree_mask = tree_from_sorted_array(temp, MH400E_NUM_GEARS);
 
     g_last_spindle_speed = spindle_speed_in_abs;
+
+    g_last_estop = estop_in;
 }
 
 /* When e-stop is triggered from the outside everything is already powered
@@ -138,23 +142,17 @@ FUNCTION(setup)
  * everything is already off at this point. */
 FUNCTION(handle_external_e_stop)
 {
-    reducer_motor = false;
-    input_stage_motor = false;
-    midrange_motor = false;
-
-    motor_lowspeed = false;
-    reverse_direction = false;
-
-    twitch_cw = false;
-    twitch_ccw = false;
-
-    start_gear_shift = false;
-
-    twitch_cw = false;
-    twitch_ccw = false;
-
+    rtapi_print_msg(RTAPI_MSG_ERR, "mh400e_gearbox: EMERGENCY STOP condition "
+                    "detected!\n");
     /* reset state machine avoiding delays */
-    gearshift_stop(0);
+    gearbox_handle_estop(); /* this function also stops/resets twitching */
+
+    spindle_at_speed = false;
+    stop_spindle = true;
+
+    /* reset estop_out pin since we could haave been the ones who triggered
+     * this e-stop */
+    estop_out = false;
 }
 
 /* main component function */
@@ -162,10 +160,15 @@ FUNCTION(_)
 {
     if (estop_in)
     {
-        handle_external_e_stop(__comp_inst, period);
-        rtapi_print_msg(RTAPI_MSG_ERR, "mh400e_gearbox: E-STOP detected!\n");
+        if (g_last_estop != estop_in)
+        {
+            handle_external_e_stop(__comp_inst, period);
+            g_last_estop = estop_in;
+        }
         return;
     }
+
+    g_last_estop = estop_in;
 
     /* perform one time setup */
     if (!g_setup_done)
@@ -235,7 +238,8 @@ FUNCTION(_)
          *
          * We expect that estop_out will be looped back to us so that
          * it will trigger our handler. */
-        rtapi_print_msg(RTAPI_MSG_ERR, "ERROR: spindle runs while shifting\n");
+        rtapi_print_msg(RTAPI_MSG_ERR, "mh400e_gearbox FATAL ERROR: detected "
+                "running spindle while shifting, triggering emergency stop!\n");
         estop_out = true;
         return;
     }
