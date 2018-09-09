@@ -96,6 +96,7 @@ static int g_backgear_index = 1;
 
 static long g_delay = SIMULATED_MOTOR_SPEED_NORMAL;
 static bool g_slow_motion = true;
+static bool g_last_stop_spindle_gui = false;
 
 /* one time setup, called from the main function to initialize whatever we
  * need */
@@ -126,6 +127,8 @@ FUNCTION(setup)
         &input_center,
         &input_left_center
     };
+
+    g_last_stop_spindle_gui = sim_stop_spindle_gui;
 }
 
 static void set_pingroup(pin_group_t *group, unsigned char pins)
@@ -217,17 +220,17 @@ FUNCTION(_)
         spindle_speed_out_abs = sim_speed_request_in;
     }
 
-    /* Comp always has the priority to override the user setting if it needs
-     * to stop the spindle, in all other cases use the setting made
-     * by the user. */
-    if (sim_stop_spindle_comp == true)
-    {
-        spindle_stopped = true;
-    }
-    else
+    /* User initiated change */
+    if (sim_stop_spindle_gui != g_last_stop_spindle_gui)
     {
         spindle_stopped = sim_stop_spindle_gui;
     }
+    else
+    {
+        spindle_stopped = sim_stop_spindle_comp;
+    }
+
+    g_last_stop_spindle_gui = sim_stop_spindle_gui;
 
     estop_out = sim_estop_gui || sim_estop_comp;
 

@@ -183,6 +183,11 @@ FUNCTION(_)
     /* Gear shift is in progress */
     if (!gearshift_in_progress())
     {
+        if (stop_spindle && !spindle_stopped)
+        {
+            stop_spindle = false;
+        }
+
         /* determine and update current spindle speed information */
         pair_t *speed = get_current_gear(g_tree_mask);
         if (speed != NULL)
