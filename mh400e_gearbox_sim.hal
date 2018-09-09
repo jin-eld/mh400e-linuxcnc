@@ -37,7 +37,9 @@ net connect-comp-spindle-control mh400e-gearbox.stop-spindle => mh400e-gearbox-s
 net connect-user-spindle-control mh400e_sim_gui.sim-stop-spindle => mh400e-gearbox-sim.sim-stop-spindle-gui
 net spindle-stopped-led mh400e-gearbox-sim.spindle-stopped => mh400e_sim_gui.spindle-stopped-in mh400e-gearbox.spindle-stopped
 net connect-slow-motion mh400e_sim_gui.sim-slow-motion-mode => mh400e-gearbox-sim.sim-slow-motion
-net connect-estop mh400e_sim_gui.sim-trigger-estop => mh400e-gearbox.estop-in
+net connect-estop-gui mh400e_sim_gui.sim-trigger-estop => mh400e-gearbox-sim.sim-estop-gui
+net connect-estop-comp mh400e-gearbox.estop-out => mh400e-gearbox-sim.sim-estop-comp
+net connect-estop-sim mh400e-gearbox-sim.estop-out => mh400e-gearbox.estop-in
 
 loadrt threads name1=mh400e-sim-thread period1=1000000
 addf mh400e-gearbox-sim mh400e-sim-thread

@@ -29,7 +29,9 @@ pin in bit sim_slow_motion = 1     "Set this pin to significantly slow down the 
 
 pin in bit sim_stop_spindle_gui = 0 "User input to set spindle_stopped pin from the UI";
 pin in bit sim_stop_spindle_comp = 0 "Input to set spindle_stopped pin from the component, has higher priority than the one from the UI";
-
+pin in bit sim_estop_gui = 0        "User input to trigger emergency stop";
+pin in bit sim_estop_comp = 0       "Emergency stop trigger from the gearbox component";
+pin out bit estop_out = 0           "Forward emergencystop event to the gearbox component";
 /* gearbox status pins from the MESA 7i84 */
 pin out bit reducer_left            "MESA 7i84 INPUT  0: 28X2-11";
 pin out bit reducer_right           "MESA 7i84 INPUT  1: 28X2-11";
@@ -226,6 +228,8 @@ FUNCTION(_)
     {
         spindle_stopped = sim_stop_spindle_gui;
     }
+
+    estop_out = sim_estop_gui || sim_estop_comp;
 
     if (reducer_motor)
     {
