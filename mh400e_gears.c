@@ -547,7 +547,7 @@ static void gearshift_handle(long period)
     if (g_gearbox_data.next == NULL)
     {
         rtapi_print_msg(RTAPI_MSG_ERR, "mh400e_gearbox FATAL ERROR: "
-                        "gearshif function not set up, triggering E-Stop!\n");
+                        "gearshift function not set up, triggering E-Stop!\n");
         *g_gearbox_data.trigger_estop = true;
         return;
     }
