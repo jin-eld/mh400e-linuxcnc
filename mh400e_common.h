@@ -72,6 +72,15 @@ static pair_t mh400e_gears[] =
     { 4000, 546     }               /*   0 0 1 0 0 0 1 0 0 0 1 0 */
 };
 
+/* Furthest CCW position, marked as "red" on the MAHO   */
+#define MH400E_STAGE_POS_LEFT               9   /* 1001 */
+
+/* Middle shaft position, marked as "bloue" on the MAHO */
+#define MH400E_STAGE_POS_CENTER             4   /* 0100 */
+
+/* Furthest CW position, marked as "yellow" on the MAHO */
+#define MH400E_STAGE_POS_RIGHT              2   /* 0010 */
+
 /* total number of selectable gears including neutral */
 #define MH400E_NUM_GEARS        (sizeof(mh400e_gears)/sizeof(pair_t))
 /* max gear index in array */

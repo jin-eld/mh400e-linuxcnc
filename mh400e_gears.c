@@ -27,6 +27,8 @@ typedef enum
 {
     SHAFT_STATE_OFF,    /* Initial shaft state */
     SHAFT_STATE_ON,     /* Shift in process (i.e. shaft motor running) */
+    SHAFT_STATE_RESTART /* Error condition, we missed our target and reached
+                           an end point, we need to go back */
 } shaft_state_t;
 
 /* Group all data that is required to operate on one shaft */
@@ -288,7 +290,55 @@ static bool gearshift_need_reverse(unsigned char target_mask,
             
     return false;
 }
+
+
 /* State functions */
+
+/* This is more or less an "overshoot" protection check in case we missed the
+ * target center pos and moved further. We know when we reach an end point
+ * and we know we can't continue further in this direction, so stop trying and
+ * go back. Returns true if action needs to be taken. */
+static bool gearshift_protect(shaft_data_t *shaft)
+{
+    if (!*shaft->motor_on)
+    {
+        return false;
+    }
+
+    if (*shaft->motor_reverse)
+    {
+        /* If we move to the left/CCW and we reached the furthest left position
+         * which does not seem to be our desired target, then we should
+         * disable the motor and trigger an E-STOP, we should never end up#
+         * in this situation. */
+        if ((shaft->current_mask == MH400E_STAGE_POS_LEFT) &&
+            (shaft->current_mask != shaft->target_mask))
+        {
+            rtapi_print_msg(RTAPI_MSG_ERR, "mh400e_gearbox: WARNING: "
+                        "shaft motor at unexpected left position!\n");
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else
+    {
+        /* Same as above, but now checking the furthest CW/right direction. */
+        if ((shaft->current_mask == MH400E_STAGE_POS_RIGHT) &&
+            (shaft->current_mask != shaft->target_mask))
+        {
+            rtapi_print_msg(RTAPI_MSG_ERR, "mh400e_gearbox: WARNING: "
+                        "shaft motor at unexpected right position!\n");
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
 
 /* Generic function that has the exact same logic, valid for all of the 
  * three shafts. */
@@ -372,6 +422,21 @@ static void gearshift_stage(shaft_data_t *shaft, statefunc me, statefunc next,
         }
         else
         {
+            /* Protect furthest lect/CW and right/CCW end positions by not
+             * allowing the motor to continue running if we reached them,
+             * this should never happen, but it's better to have a safety
+             * measure to prevent hardware damage. The function will
+             * immediately stop the motor and trigger an emergency stop if this
+             * error condition is detected. */
+            if (gearshift_protect(shaft))
+            {
+                *shaft->motor_on = false;
+                shaft->state = SHAFT_STATE_RESTART;
+                g_gearbox_data.delay = MH400E_REVERSE_MOTOR_INTERVAL;
+                g_gearbox_data.next = me;
+                return;
+            }
+
             /* Going to the center requres lowering the motor speed */
             if (MH400E_STAGE_IS_CENTER(shaft->target_mask) && 
                 !(*shaft->motor_slow))
@@ -387,6 +452,30 @@ static void gearshift_stage(shaft_data_t *shaft, statefunc me, statefunc next,
             g_gearbox_data.delay = MH400E_GEAR_STAGE_POLL_INTERVAL;
             g_gearbox_data.next = me;
         }
+    }
+    else if (shaft->state == SHAFT_STATE_RESTART)
+    {
+        /* Protection function restarted us, motor is already off and
+         * we came here after a certain delay. We now need to check what to do
+         * and re-energize */
+          if (*shaft->motor_reverse)
+          {
+              *shaft->motor_reverse = false;
+              g_gearbox_data.delay = MH400E_GENERIC_PIN_INTERVAL;
+              g_gearbox_data.next = me;
+              return;
+          }
+
+          if (*shaft->motor_slow)
+          {
+              *shaft->motor_slow = false;
+              g_gearbox_data.delay = MH400E_GENERIC_PIN_INTERVAL;
+          }
+
+          /* Going back to the OFF state will retrigger the shift logic for
+           * this shaft */
+          shaft->state = SHAFT_STATE_OFF;
+          g_gearbox_data.next = me;
     }
 }
 
