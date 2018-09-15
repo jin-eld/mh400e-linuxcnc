@@ -97,6 +97,8 @@ static bool g_last_estop = false;
  * need */
 FUNCTION(setup)
 {
+    int i;
+
     /* Initialize state data structures */
     gearbox_setup(__comp_inst, period);
     twitch_setup(__comp_inst, period);
@@ -106,7 +108,7 @@ FUNCTION(setup)
      * we'll put things together the way we need them for the tree generation
      */
     pair_t temp[MH400E_NUM_GEARS];
-    for (int i = 0; i < MH400E_NUM_GEARS; i++)
+    for (i = 0; i < MH400E_NUM_GEARS; i++)
     {
         temp[i].key = mh400e_gears[i].key;
         temp[i].value = i;
@@ -119,7 +121,7 @@ FUNCTION(setup)
     /* build up a key:value list where the bitmask from the m400e_gears
      * array is the key and the index of the original position in the
      * above array is the value */
-    for (int i = 0; i < MH400E_NUM_GEARS; i++)
+    for (i = 0; i < MH400E_NUM_GEARS; i++)
     {
         temp[i].key = mh400e_gears[i].value;
         temp[i].value = i;

@@ -180,7 +180,8 @@ static void gearshift_stop_spindle()
 static unsigned char get_bitmask_from_pingroup(pin_group_t *group)
 {
     unsigned char mask = 0;
-    for (int i = 0; i < MH400E_PINS_IN_GROUP; i++)
+    int i;
+    for (i = 0; i < MH400E_PINS_IN_GROUP; i++)
     {
         mask |= *(group->p[i]) << i;
     }
