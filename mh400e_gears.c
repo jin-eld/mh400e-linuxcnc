@@ -169,7 +169,7 @@ FUNCTION(gearbox_setup)
     g_gearbox_data.next = NULL;
 }
 
-static void gearshift_stop_spindle()
+static void gearshift_stop_spindle(void)
 {
     g_gearbox_data.spindle_on_before_shift =
         !(*g_gearbox_data.is_spindle_stopped);
@@ -190,7 +190,7 @@ static unsigned char get_bitmask_from_pingroup(pin_group_t *group)
 }
 
 /* Update current mask values for each shaft */
-static void update_current_pingroup_masks()
+static void update_current_pingroup_masks(void)
 {
     g_gearbox_data.backgear.current_mask =
         get_bitmask_from_pingroup(&g_gearbox_data.backgear.status_pins);
@@ -200,7 +200,7 @@ static void update_current_pingroup_masks()
         get_bitmask_from_pingroup(&g_gearbox_data.input_stage.status_pins);
 }
 
-static bool estop_on_spindle_running()
+static bool estop_on_spindle_running(void)
 {
     if (!*g_gearbox_data.is_spindle_stopped)
     {
@@ -590,7 +590,7 @@ static void gearshift_start(pair_t *target_gear, long period)
 }
 
 /* Reset pins and state machine if an emergency stop was triggered. */
-static void gearbox_handle_estop()
+static void gearbox_handle_estop(void)
 {
     *g_gearbox_data.input_stage.motor_on = false;
     *g_gearbox_data.midrange.motor_on = false;
@@ -604,7 +604,7 @@ static void gearbox_handle_estop()
     gearshift_stop(0); /* Will stop and reset twitching as well */
 }
 
-static bool gearshift_in_progress()
+static bool gearshift_in_progress(void)
 {
     return g_gearbox_data.next != NULL;
 }

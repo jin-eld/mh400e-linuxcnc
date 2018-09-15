@@ -46,7 +46,7 @@ static void twitch_handle(long period);
 static void twitch_stop(long period);
 
 /* Returns true if stop twitching operation completed. */
-static bool twitch_stop_completed();
+static bool twitch_stop_completed(void);
 
 /* really ugly way of keeping more order and splitting the sources,
  * halcompile does not allow to link multipe source files together, so

@@ -31,7 +31,7 @@ FUNCTION(gearbox_setup);
 
 /* Construct masks from current gearbox status pins, call this function
  * once per iteration */
-static void update_current_pingroup_masks();
+static void update_current_pingroup_masks(void);
 
 /* Combine masks from each pin group to a value representing the current
  * gear setting. A return of NULL means that a corresponding value could
@@ -52,10 +52,10 @@ static void gearshift_start(pair_t *target_gear, long period);
 static void gearshift_handle(long period);
 
 /* Reset pins and state machine if an emergency stop was triggered. */
-static void gearbox_handle_estop();
+static void gearbox_handle_estop(void);
 
 /* Returns true if a gear shifting operation is currently in progress */
-static bool gearshift_in_progress();
+static bool gearshift_in_progress(void);
 
 /* really ugly way of keeping more order and splitting the sources,
  * halcompile does not allow to link multipe source files together, so

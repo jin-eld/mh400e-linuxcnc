@@ -171,7 +171,7 @@ static void twitch_handle(long period)
 }
 
 /* Returns true if stop twitching operation completed. */
-static bool twitch_stop_completed()
+static bool twitch_stop_completed(void)
 {
     return g_twitch_data.finished;
 }
