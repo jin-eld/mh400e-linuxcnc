@@ -72,57 +72,6 @@ static int tree_leaf_right(tree_node_t *node)
     return temp->key;
 }
 
-
-/* Insert a new node with a given key and value into the tree.
- * Creates a new tree/node if given node is NULL. */
-static tree_node_t *tree_insert(tree_node_t *node, unsigned key,
-                                unsigned value)
-{
-    /* add new leaf node */
-    if (node == NULL)
-    {
-        return tree_node_allocate(key, value);
-    }
-
-    /* if there are no branches, then it is a leaf node */
-    if ((node->right == NULL) && (node->left == NULL))
-    {
-        /* create decision node */
-        tree_node_t *dn = tree_node_allocate((key + node->key) / 2, 0);
-        if (dn == NULL)
-        {
-            /* fatal: allocation failed, error message will be printed by the
-             * allocate function. */
-            return NULL;
-        }
-        /* populate deision node */
-        if (key < node->key)
-        {
-            dn->left = tree_insert(NULL, key, value);
-            dn->right = node;
-        }
-        else
-        {
-            dn->left = node;
-            dn->right = tree_insert(NULL, key, value);
-        }
-        return dn;
-    }
-    else /* its a decision node, recalculate its key and link to it */
-    {
-        if (key < node->key)
-        {
-            node->left = tree_insert(node->left, key, value);
-        }
-        else
-        {
-            node->right = tree_insert(node->right, key, value);
-        }
-        node->key = ((tree_leaf_left(node->right) + tree_leaf_right(node->left))/2);
-        return node;
-    }
-}
-
 /* Build up a tree from a sorted array. */
 static tree_node_t *tree_from_sorted_array(pair_t *array, size_t length)
 {

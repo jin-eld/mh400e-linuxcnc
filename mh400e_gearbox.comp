@@ -76,20 +76,10 @@ option singleton yes;
 
 static float g_last_spindle_speed = 0;
 
-static pin_group_t g_backgear;
-static pin_group_t g_midrange;
-static pin_group_t g_input_stage;
-
-static unsigned char g_current_backgear_mask = 0;
-static unsigned char g_current_midrange_mask = 0;
-static unsigned char g_current_input_stage_mask = 0;
-
 static tree_node_t *g_tree_rpm = NULL;
 static tree_node_t *g_tree_mask = NULL;
 
 static bool g_setup_done = false;
-
-static bool g_spindle_on_before_shift = false;
 
 static bool g_last_estop = false;
 

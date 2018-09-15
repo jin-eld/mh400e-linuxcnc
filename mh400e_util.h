@@ -55,11 +55,6 @@ static int tree_leaf_left(tree_node_t *node);
 /* Find the key of the right leaf node. */
 static int tree_leaf_right(tree_node_t *node);
 
-/* Insert a new node with a given key and value into the tree.
- * Creates a new tree/node if given node is NULL. */
-static tree_node_t *tree_insert(tree_node_t *node, unsigned key,
-                                unsigned value);
-
 /* Build up a tree from a sorted array. */
 static tree_node_t *tree_from_sorted_array(pair_t *array, size_t length);
 
