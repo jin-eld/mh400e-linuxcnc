@@ -4,7 +4,7 @@ loadrt mh400e_gearbox
 loadusr -Wn mh400e_sim_gui pyvcp -c mh400e_sim_gui mh400e_gearbox.xml
 
 # connect simulator and the UI
-net set-reducer-left mh400e-gearbox-sim.reducer-left => mh400e_sim_gui.reducer-left mh400e-gearbox.reducer-left
+net gui-set-reducer-left mh400e-gearbox-sim.reducer-left => mh400e_sim_gui.reducer-left mh400e-gearbox.reducer-left
 net gui-set-reducer-right mh400e-gearbox-sim.reducer-right => mh400e_sim_gui.reducer-right mh400e-gearbox.reducer-right
 net gui-set-reducer-center mh400e-gearbox-sim.reducer-center => mh400e_sim_gui.reducer-center mh400e-gearbox.reducer-center
 net gui-set-reducer-left-center mh400e-gearbox-sim.reducer-left-center => mh400e_sim_gui.reducer-left-center mh400e-gearbox.reducer-left-center
