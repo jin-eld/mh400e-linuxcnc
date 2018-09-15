@@ -223,17 +223,20 @@ static bool estop_on_spindle_running(void)
  * not be found, which may indicate a gearshift being in progress- */
 static pair_t* get_current_gear(tree_node_t *tree)
 {
+    tree_node_t *result;
+
     unsigned combined = (g_gearbox_data.input_stage.current_mask << 8) |
                         (g_gearbox_data.midrange.current_mask << 4) |
                          g_gearbox_data.backgear.current_mask;
 
     /* special case: ignore all other bits for neutral */
     if (g_gearbox_data.backgear.current_mask ==
-            mh400e_gears[MH400E_NEUTRAL_GEAR_INDEX].value) {
+            mh400e_gears[MH400E_NEUTRAL_GEAR_INDEX].value)
+    {
         return &(mh400e_gears[MH400E_NEUTRAL_GEAR_INDEX]);
     }
 
-    tree_node_t *result = tree_search(tree, combined);
+    result = tree_search(tree, combined);
     if (result != NULL)
     {
         return &(mh400e_gears[result->value]);

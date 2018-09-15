@@ -195,6 +195,8 @@ static void sort_array_by_key(pair_t array[], size_t length)
 
 static pair_t *select_gear_from_rpm(tree_node_t *tree, float rpm)
 {
+    tree_node_t *result;
+
     /* handle two cases that do not need extra searching */
     if (rpm <= 0)
     {
@@ -212,7 +214,7 @@ static pair_t *select_gear_from_rpm(tree_node_t *tree, float rpm)
         return &(mh400e_gears[MH400E_MIN_RPM_INDEX]);
     }
 
-    tree_node_t *result = tree_search_closest_match(tree, (unsigned)round(rpm));
+    result = tree_search_closest_match(tree, (unsigned)round(rpm));
 
     return &(mh400e_gears[result->value]);
 }
