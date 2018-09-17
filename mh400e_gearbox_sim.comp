@@ -84,9 +84,9 @@ static bool g_setup_done = false;
 /* red: 1001, blue: 0100, yellow: 0010 */
 static unsigned char g_shaft_positions[SHAFT_POSITIONS] =
 {
-    MH400E_STAGE_POS_LEFT,
+    MH400E_STAGE_POS_RIGHT,
     MH400E_STAGE_POS_CENTER,
-    MH400E_STAGE_POS_RIGHT
+    MH400E_STAGE_POS_LEFT
 };
 
 /* start in neutral position */

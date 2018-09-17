@@ -259,9 +259,9 @@ static bool gearshift_wait_delay(long period)
 /* From:
  * https://forum.linuxcnc.org/12-milling/33035-retrofitting-a-1986-maho-mh400e?start=460#117021
  *
- * 1. if u need to go to the left then turn ccw
- * 2. if u need to go to the right than turn cw
- * 3. if u need to go to the middle and Left-Center is 1 then turn cw else ccw
+ * 1. if u need to go to the left then turn cw
+ * 2. if u need to go to the right than turn ccw
+ * 3. if u need to go to the middle and Left-Center is 1 then turn ccw else cw
  *
  * ┌───┐
  * ┘   └──────────────── left
@@ -276,23 +276,23 @@ static bool gearshift_wait_delay(long period)
 static bool gearshift_need_reverse(unsigned char target_mask,
                                    unsigned char current_mask)
 {
-    if (MH400E_STAGE_IS_RIGHT(target_mask))           /* CW, reverse is off */
-    {
-        return false;
-    }
-    else if (MH400E_STAGE_IS_LEFT(target_mask))       /* CCW, reverse is on */
+    if (MH400E_STAGE_IS_RIGHT(target_mask))           /* CCW, reverse is on */
     {
         return true;
     }
+    else if (MH400E_STAGE_IS_LEFT(target_mask))       /* CW, reverse is off */
+    {
+        return false;
+    }
     else if (MH400E_STAGE_IS_CENTER(target_mask))
     {
-        if (!MH400E_STAGE_IS_LEFT_CENTER(current_mask))/* CCW, reverse is on */
+        if (!MH400E_STAGE_IS_LEFT_CENTER(current_mask))/* CW,reverse is off */
         {
-            return true; 
+            return false;
         }
     }
             
-    return false;
+    return true;
 }
 
 
@@ -311,7 +311,24 @@ static bool gearshift_protect(shaft_data_t *shaft)
 
     if (*shaft->motor_reverse)
     {
-        /* If we move to the left/CCW and we reached the furthest left position
+        /* If we move to the left/CW and we reached the furthest left position
+         * which does not seem to be our desired target, then we should
+         * disable the motor and trigger an E-STOP, we should never end up#
+         * in this situation. */
+        if ((shaft->current_mask == MH400E_STAGE_POS_RIGHT) &&
+            (shaft->current_mask != shaft->target_mask))
+        {
+            rtapi_print_msg(RTAPI_MSG_ERR, "mh400e_gearbox: WARNING: "
+                        "shaft motor at unexpected right position!\n");
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else
+    {
+        /* If we move to the left/CW and we reached the furthest left position
          * which does not seem to be our desired target, then we should
          * disable the motor and trigger an E-STOP, we should never end up#
          * in this situation. */
@@ -325,20 +342,7 @@ static bool gearshift_protect(shaft_data_t *shaft)
         {
             return false;
         }
-    }
-    else
-    {
-        /* Same as above, but now checking the furthest CW/right direction. */
-        if ((shaft->current_mask == MH400E_STAGE_POS_RIGHT) &&
-            (shaft->current_mask != shaft->target_mask))
-        {
-            rtapi_print_msg(RTAPI_MSG_ERR, "mh400e_gearbox: WARNING: "
-                        "shaft motor at unexpected right position!\n");
-        }
-        else
-        {
-            return false;
-        }
+
     }
 
     return true;
